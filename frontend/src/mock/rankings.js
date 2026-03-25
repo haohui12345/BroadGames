@@ -1,0 +1,38 @@
+export const rankings = [
+  {
+    id: 'r1',
+    gameId: 'g1',
+    gameSlug: 'tic-tac-toe',
+    userId: 'u2',
+    username: 'nguyenvana',
+    score: 120,
+    scope: 'system',
+  },
+  {
+    id: 'r2',
+    gameId: 'g1',
+    gameSlug: 'tic-tac-toe',
+    userId: 'u3',
+    username: 'tranthib',
+    score: 100,
+    scope: 'system',
+  },
+  {
+    id: 'r3',
+    gameId: 'g3',
+    gameSlug: 'caro-5',
+    userId: 'u5',
+    username: 'phamthud',
+    score: 220,
+    scope: 'system',
+  },
+  {
+    id: 'r4',
+    gameId: 'g6',
+    gameSlug: 'memory',
+    userId: 'u4',
+    username: 'leminhc',
+    score: 180,
+    scope: 'system',
+  },
+]
