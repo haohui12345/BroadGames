@@ -190,7 +190,7 @@ const finishSession = async (req, res, next) => {
                        wins: existing.wins + (isWinner ? 1 : 0),
                        losses: existing.losses + (!isWinner && !isDraw ? 1 : 0),
                        draws: existing.draws + (isDraw ? 1 : 0),
-                       total_score: existing.points + points,
+                       total_score: existing.total_score + points,
                        updated_at: db.fn.now(),
                     });
             } else {
