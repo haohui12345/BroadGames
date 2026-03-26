@@ -1,29 +1,16 @@
-const db = require('../config/db');
+const express = require('express');
+const router = express.Router();
+const { getProfile, updateProfile, searchUsers, getUserById, getRankings, getFriendRankings, getPersonalRankings } = require('../controllers/userController');
+const { authenticateToken } = require('../middlewares/auth');
 
-const User = {    
-    //tìm user theo email, username, id
-    findByEmail: (email) => 
-        db('users').where({ email }).first(),
+router.use(authenticateToken)
 
-    findByUsername: (username) =>
-        db('users').where({ username }).first(),
+router.get('/profile', getProfile);
+router.put('/profile', updateProfile);
+router.get('/search', searchUsers);
+router.get('/rankings', getRankings);
+router.get('/rankings/friends', getFriendRankings);
+router.get('/rankings/personal', getPersonalRankings);
+router.get('/:id', getUserById);
 
-    findById: (id) =>
-        db('users').where({ id }).first(),
-
-    //khi tạo user mới, trả về user vừa tạo (bỏ pass)
-    create: async (data) => {
-        const [user] = await db('users')
-        .insert({ ...data, is_active: true })
-        .returning(['id', 'email', 'username', 'full_name', 'avatar_url', 'role', 'created_at']);
-        return user;
-    },
-
-    //cập nhật user
-    update: (id, data) =>
-        db('users')
-            .where({ id }) 
-            .update({ ...data, updated_at: db.fn.now() }),
-};
-
-module.exports = User;
+module.exports = router;
