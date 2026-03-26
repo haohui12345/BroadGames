@@ -28,9 +28,9 @@ app.use('/api/users', userRoutes);
 app.use('/api/games', gameRoutes);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/achievements', achievementRoutes)
-app.use('/api/friends',     friendRoutes);
-app.use('/api/messages',    messageRoutes);
-app.use('/api/admin',       adminRoutes);
+app.use('/api/friends', friendRoutes);
+app.use('/api/messages', messageRoutes);
+app.use('/api/admin', adminRoutes);
 
 // ── Health check ──────────────────────────────────────────────
 app.get('/api/health', (req, res) => {

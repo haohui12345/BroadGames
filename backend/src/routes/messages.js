@@ -5,9 +5,9 @@ const { authenticateToken } = require("../middlewares/auth");
 
 router.use(authenticateToken)
 
-router.get('/', authenticateToken, getInbox);
-router.get('/unread/count', authenticateToken, getUnreadCount);
-router.get('/:id', authenticateToken, getConversation);
-router.post('/:id', authenticateToken, sendMessage);
+router.get('/', getInbox);
+router.get('/unread/count', getUnreadCount);
+router.get('/:id', getConversation);
+router.post('/:id', sendMessage);
 
 module.exports = router;
