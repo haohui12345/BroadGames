@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { checkAndUnlock } = require('./achievementController');
 
 // POST /api/friends/request/:id
 // gửi lời mời kết bạn
@@ -55,6 +56,12 @@ const acceptRequest = async (req, res, next) => {
         await db('friendships')
             .where({ id: friendship.id })
             .update({ status: 'accepted', updated_at: db.fn.now() });
+
+        // kiểm tra achievement
+        await checkAndUnlock(req.user.id, 'social_butterfly');
+        await checkAndUnlock(requesterId, 'social_butterfly');
+
+        return res.json({ message: 'Đã chấp nhận lời mời kết bạn'})
     } catch(err) {
         next(err);
     }

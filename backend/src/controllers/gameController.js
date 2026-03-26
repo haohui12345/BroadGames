@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const Game = require('../models/Game');
+const { checkAndUnlock } = require('./achievementController');
 
 // GET /api/games
 // lấy ds game (client chỉ thấy game đang active)
@@ -64,7 +65,8 @@ const rateGame = async (req, res, next) => {
         if (existing) {
             await db('game_ratings')
                 .where({ user_id, game_id})
-                .update({ rating: ratingNum,
+                .update({ 
+                    rating: ratingNum,
                     comment, 
                     updated_at: new Date()});
             return res.json({ message: 'Cập nhật thành công' });
@@ -74,7 +76,12 @@ const rateGame = async (req, res, next) => {
             user_id: req.user.id, 
             game_id, 
             rating: ratingNum,
-            comment });
+            comment 
+        });
+
+        // kiểm tra achievement
+        await checkAndUnlock(user_id, 'reviewer');
+
         return res.status(201).json({ message: 'Đánh giá thành công'});
     } catch(err) {
         next(err);

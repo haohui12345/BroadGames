@@ -1,4 +1,5 @@
 const db = require('../config/db')
+const { checkAndUnlock } = require('./achievementController');
 
 // POST /api/sessions
 // tạo phòng
@@ -209,6 +210,14 @@ const finishSession = async (req, res, next) => {
         await updateRanking(session.host_id, winner_id === session.host_id, isDraw);
         if (session.guest_id && !session.vs_computer) {
             await updateRanking(session.guest_id, winner_id === session.guest_id, isDraw);
+        };
+
+        const achievementCodes = ['first_win', 'win_10', 'win_50', 'caro5_master', 'tictacto_pro'];
+        for (const code of achievementCodes) {
+            await checkAndUnlock(session.host_id, code);
+            if (session.guest_id && !session.vs_computer) {
+                await checkAndUnlock(session.guest_id, code);
+            }
         };
 
         return res.json({ message: 'Game đã kết thúc!' });
