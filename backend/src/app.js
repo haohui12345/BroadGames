@@ -18,7 +18,7 @@ const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const gameRoutes = require('./routes/games');
 const sessionRoutes = require('./routes/sessions');
-// const rankingRoutes = require('./routes/rankings');
+const achievementRoutes = require('./routes/achievements')
 const friendRoutes = require('./routes/friendships');
 const messageRoutes = require('./routes/messages');
 const adminRoutes   = require('./routes/admin');
@@ -27,7 +27,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/games', gameRoutes);
 app.use('/api/sessions', sessionRoutes);
-// app.use('/api/rankings',    rankingRoutes);
+app.use('/api/achievements', achievementRoutes)
 app.use('/api/friends',     friendRoutes);
 app.use('/api/messages',    messageRoutes);
 app.use('/api/admin',       adminRoutes);
