@@ -1,25 +1,18 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import gameService from '@/services/gameService'
 
 export const useGameStore = create(
   persist(
     (set, get) => ({
-      // current game session
-      currentGame: null,     // game type slug
-      boardState: null,      // serializable board snapshot
-      scores: {},            // { [gameSlug]: { wins, losses, draws } }
-      savedGames: {},        // { [gameSlug]: savedSnapshot }
-      timerDuration: 30,     // seconds per turn (configurable)
-
-      startGame: (gameSlug) => set({ currentGame: gameSlug, boardState: null }),
+      scores: {},       // { [gameSlug]: { wins, losses, draws } }
+      savedGames: {},   // { [gameSlug]: savedSnapshot }
+      timerDuration: 30,
 
       saveGame: (gameSlug, snapshot) =>
         set((s) => ({ savedGames: { ...s.savedGames, [gameSlug]: snapshot } })),
 
-      loadGame: (gameSlug) => {
-        const snap = get().savedGames[gameSlug]
-        return snap || null
-      },
+      loadGame: (gameSlug) => get().savedGames[gameSlug] || null,
 
       deleteSave: (gameSlug) =>
         set((s) => {
@@ -28,7 +21,9 @@ export const useGameStore = create(
           return { savedGames: next }
         }),
 
-      recordResult: (gameSlug, result) =>
+      // Ghi nhận kết quả local + gọi API finishSession nếu có session_id
+      recordResult: async (gameSlug, result, sessionId, userId) => {
+        // Cập nhật local
         set((s) => {
           const prev = s.scores[gameSlug] || { wins: 0, losses: 0, draws: 0 }
           return {
@@ -41,7 +36,19 @@ export const useGameStore = create(
               },
             },
           }
-        }),
+        })
+
+        // Gọi API cập nhật ranking nếu có session
+        if (sessionId) {
+          const score = result === 'win' ? 100 : result === 'draw' ? 20 : 0
+          await gameService.finishSession({
+            session_id: sessionId,
+            winner_id: result === 'win' ? userId : null,
+            score_host: score,
+            score_guest: 0,
+          })
+        }
+      },
 
       setTimerDuration: (seconds) => set({ timerDuration: seconds }),
     }),
