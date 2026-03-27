@@ -338,8 +338,74 @@ const getHistory = async (req, res, next) => {
     return res.json({ history });
   } catch (err) { next(err); }
 };
+
+// GET /api/sessions/:id/scores
+// xem số điểm của 1 session - guest or host mới xem được
+const getSessionScores = async (req, res, next) => {
+    try {
+        const session = await db('game_sessions as s')
+            .join('games as g', 'g.id', 's.game_id')
+            .leftJoin('users as host', 'host.id', 's.host_id')
+            .leftJoin('users as guest', 'guest.id', 's.guest_id')
+            .where('s.id', req.params.id)
+            .select(
+                's.id as session_id',
+                's.status',
+                's.vs_computer',
+                's.winner_id',
+                's.score_host',
+                's.score_guest',
+                's.started_at',
+                's.finished_at',
+                'g.id as game_id',
+                'g.name as game_name',
+                'host_id as host_id',
+                'host.username as host_username',
+                'host.avatar_url as host.avatar_url',
+                'guest_id as guest_id',
+                'guest.username as guest_username',
+                'guest.avatar_url as guest.avatar_url'
+            )
+            .first();
+
+        if (!session) {
+            return res.status(404).json({ message: 'Không tìm thấy trận đấu' });
+        };
+
+        if (!session.host_id == req.user.id && !session.guest_id == req.user.id) {
+            return res.status(400).json({ message: 'Bạn không có quyền xem điểm của trận đấu này' })
+        };
+
+        return res.json({ 
+            session_id: session.session_id,
+            game: { id: session.game_id, name: session.game_name },
+            status: session.status,
+            winner_id: session.winner_id,
+            started_at: session.started_at,
+            finished_at: session.finished_at,
+            players: {
+                host: {
+                    id: session.host_id,
+                    username: session.host_username,
+                    avatar_url: session.host_avatar_url,
+                    score: session.score_host
+                },
+                guest: session.vs_computer
+                    ? { id: null, username: 'Computer', avatar_url: null, score: session.score_guest }
+                    : {
+                        id: session.guest_id,
+                        username: session.guest_username,
+                        avatar_url: session.guest_avatar_url,
+                        score: session.score_guest
+                    },
+            },
+        });
+    } catch(err) {
+        next(err);
+    }
+};
  
 module.exports = {
-  createSession, joinSession, getWaitingSession, getSession,
+  createSession, joinSession, getWaitingSession, getSession, getSessionScores,
   updateBoard, finishSession, saveSession, getSave, abandonSession, getHistory,
 };

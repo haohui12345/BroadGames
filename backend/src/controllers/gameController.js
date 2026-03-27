@@ -131,7 +131,7 @@ const updateGame = async (req, res, next) => {
             board_size, 
             min_players, 
             max_players,
-            is_enabled
+            is_enabled,
         } = req.body;
 
         await Game.update(
@@ -186,6 +186,30 @@ const deleteGame = async (req, res, next) => {
     }
 };
 
+// GET /api/game/:id/rules
+const getGameRules = async (req, res, next) => {
+    try {
+        const game = await Game.findById(req.params.id);
+
+        if (!game) {
+            return res.status(404).json({ message: 'Không tìm thấy game' });
+        };
+
+        if (!game.rules) {
+            return res.status(404).json({ message: 'Không tìm thấy luật chơi' });
+        };
+
+        return res.json({
+            game_id: game.id,
+            game_name: game.name,
+            rules: game.rules
+        })
+    } catch(err) {
+        next(err);
+    }
+};
+
+
 module.exports = {
     getAllGames,
     getGameById,
@@ -194,5 +218,6 @@ module.exports = {
     deleteGame,
     toggleGame,
     rateGame,
-    getGameRatings
+    getGameRatings,
+    getGameRules
 }

@@ -1,21 +1,22 @@
 
 const express = require('express');
 const router = express.Router();
-const { getWaitingSession, getSave, getHistory, createSession, getSession, joinSession, updateBoard, finishSession, saveSession, abandonSession } = require('../controllers/sessionController');
+const { getSessionScores, getWaitingSession, getSave, getHistory, createSession, getSession, joinSession, updateBoard, finishSession, saveSession, abandonSession } = require('../controllers/sessionController');
 const {  authenticateToken } = require('../middlewares/auth')
 
 router.use(authenticateToken)
 
-router.get('/waiting', authenticateToken, getWaitingSession);
-router.get('/saves', authenticateToken, getSave);
-router.get('/history', authenticateToken, getHistory);
+router.get('/waiting', getWaitingSession);
+router.get('/saves', getSave);
+router.get('/history', getHistory);
 
-router.post('/', authenticateToken, createSession);
-router.get('/:id', authenticateToken, getSession);
-router.post('/:id/join', authenticateToken, joinSession);
-router.put('/:id/board', authenticateToken, updateBoard);
-router.post('/:id/finish', authenticateToken, finishSession);
-router.post('/:id/save', authenticateToken, saveSession);
-router.post('/:id/abandon', authenticateToken, abandonSession);
+router.post('/', createSession);
+router.get('/:id', getSession);
+router.post('/:id/join', joinSession);
+router.put('/:id/board', updateBoard);
+router.post('/:id/finish', finishSession);
+router.post('/:id/save', saveSession);
+router.post('/:id/abandon', abandonSession);
+router.get('/:id/scores', getSessionScores);
 
 module.exports = router;

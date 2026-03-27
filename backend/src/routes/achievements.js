@@ -5,9 +5,9 @@ const { authenticateToken } = require('../middlewares/auth');
 
 router.use(authenticateToken)
 
-router.get('/', authenticateToken, getAllAchievements);
-router.get('/me', authenticateToken, getMyAchievements);
-router.post('/check', authenticateToken, checkAchievements); 
-router.get('/users/:id', authenticateToken, getUserAchievements); 
+router.get('/', getAllAchievements);
+router.get('/me', getMyAchievements);
+router.post('/check', checkAchievements); 
+router.get('/users/:id', getUserAchievements); 
 
 module.exports = router;

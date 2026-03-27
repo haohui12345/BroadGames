@@ -4,13 +4,13 @@ const db = require('../config/db')
 // danh sách tất cả các thành tựu
 const getAllAchievements = async (req, res, next) => {
     try {
-        const achievements = await db('achivements as a')
+        const achievements = await db('achievements as a')
             .leftJoin('games as g', 'g.id', 'a.game_id')
             .select(
                 'a.id', 'a.code', 'a.name', 'a.description', 'a.icon_url',
                 'g.id as game_id', 'g.name as game_name'
             )
-            orderBy('a.id');
+            .orderBy('a.id');
 
         return res.json({ achievements });
     } catch(err){

@@ -147,7 +147,7 @@ const getFriendRankings = async (req, res, next) => {
 };
 
 // GET /api/users/rankings/personal
-const getPersonalRankings = async (req, res, next) => {
+const getMyRankings = async (req, res, next) => {
   try {
     const { page = 1 } = req.query;
     const limit = 20;
@@ -182,5 +182,5 @@ module.exports = {
     getUserById,
     getRankings,
     getFriendRankings,
-    getPersonalRankings,
+    getMyRankings,
 };
