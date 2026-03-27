@@ -1,7 +1,7 @@
 
 const express = require('express');
 const router = express.Router();
-const { getGameRules, updateGameRules, getAllGames, getGameById, createGame, updateGame, deleteGame, toggleGame, getGameRatings, rateGame } = require('../controllers/gameController');
+const { getGameRules, getAllGames, getGameById, createGame, updateGame, deleteGame, toggleGame, getGameRatings, rateGame } = require('../controllers/gameController');
 const { authenticateToken } = require('../middlewares/auth');
 const { isAdmin } = require('../middlewares/isAdmin');
 
