@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Search, Ban, Trash2, Shield } from 'lucide-react'
-import authService from '@/services/authService'
+import { Search, Ban, Shield, UserCheck } from 'lucide-react'
+import adminService from '@/services/adminService'
 import Avatar from '@/components/common/Avatar'
 import Pagination from '@/components/common/Pagination'
 import Spinner from '@/components/common/Spinner'
@@ -14,12 +14,16 @@ export default function AdminUsers() {
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(false)
-  const [confirmModal, setConfirmModal] = useState(null) // { type, user }
+  const [confirmModal, setConfirmModal] = useState(null) // { user }
+  const [toggling, setToggling] = useState(null)
 
   const load = (p = 1, q = search) => {
     setLoading(true)
-    adminService.getUsers({ page: p, search: q, limit: 10 })
-      .then(r => { setUsers(r.data?.data || []); setTotal(r.data?.total || 0) })
+    adminService.getUsers({ page: p, q })
+      .then(r => {
+        setUsers(r.data || [])
+        setTotal(r.total || 0)
+      })
       .catch(() => {})
       .finally(() => setLoading(false))
   }
@@ -28,38 +32,49 @@ export default function AdminUsers() {
 
   const handleSearch = () => { setPage(1); load(1, search) }
 
-  const ban = async (u) => {
-    try { await adminService.banUser(u.id); toast.success(`Đã ${u.is_banned ? 'bỏ cấm' : 'cấm'} ${u.display_name}`); load(page) }
-    catch { toast.error('Lỗi') }
-    setConfirmModal(null)
+  const handleToggle = async (u) => {
+    setToggling(u.id)
+    try {
+      await adminService.toggleUserActive(u.id)
+      toast.success(u.is_banned ? `Đã mở khoá ${u.display_name}` : `Đã khoá ${u.display_name}`)
+      // Cập nhật local ngay
+      setUsers(prev => prev.map(x =>
+        x.id === u.id ? { ...x, is_banned: !x.is_banned, status: x.is_banned ? 'active' : 'banned' } : x
+      ))
+    } catch {
+      toast.error('Không thể thay đổi trạng thái')
+    } finally {
+      setToggling(null)
+      setConfirmModal(null)
+    }
   }
-
-  const del = async (u) => {
-    try { await adminService.deleteUser(u.id); toast.success('Đã xoá người dùng'); load(page) }
-    catch { toast.error('Lỗi') }
-    setConfirmModal(null)
-  }
-
-  const ROLE_BADGE = { admin: 'badge-red', user: 'badge-blue' }
 
   return (
     <div className="p-6 max-w-5xl mx-auto animate-fade-in">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Quản lý người dùng</h1>
-        <span className="badge-gray">{total} người dùng</span>
+        <div>
+          <h1 className="text-2xl font-bold">Quản lý người dùng</h1>
+          <p className="text-sm text-[var(--text-muted)] mt-0.5">{total} tài khoản</p>
+        </div>
       </div>
 
       {/* Search */}
       <div className="flex gap-2 mb-5">
-        <input value={search} onChange={e => setSearch(e.target.value)}
+        <input
+          value={search}
+          onChange={e => setSearch(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleSearch()}
-          className="input flex-1 max-w-sm" placeholder="Tìm theo tên, username, email..." />
-        <button onClick={handleSearch} className="btn-primary px-4"><Search size={16} /></button>
+          className="input flex-1 max-w-sm"
+          placeholder="Tìm theo username, email..."
+        />
+        <button onClick={handleSearch} className="btn-primary px-4">
+          <Search size={16} />
+        </button>
       </div>
 
       {/* Table */}
       <div className="card overflow-hidden">
-        {loading ? <Spinner /> : users.length === 0 ? (
+        {loading ? <div className="p-8"><Spinner /></div> : users.length === 0 ? (
           <Empty icon="👥" title="Không có người dùng" />
         ) : (
           <div className="overflow-x-auto">
@@ -85,24 +100,39 @@ export default function AdminUsers() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-[var(--text-muted)]">{u.email}</td>
+                    <td className="px-4 py-3 text-[var(--text-muted)] text-xs">{u.email}</td>
                     <td className="px-4 py-3 text-center">
-                      <span className={ROLE_BADGE[u.role] || 'badge-gray'}>{u.role}</span>
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                        u.role === 'admin'
+                          ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
+                          : 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
+                      }`}>
+                        {u.role === 'admin' ? '🛡 Admin' : 'User'}
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <span className={u.is_banned ? 'badge-red' : 'badge-green'}>{u.is_banned ? 'Bị cấm' : 'Hoạt động'}</span>
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                        u.is_banned
+                          ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
+                          : 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400'
+                      }`}>
+                        {u.is_banned ? '🔒 Bị khoá' : '✓ Hoạt động'}
+                      </span>
                     </td>
                     <td className="px-5 py-3 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <button onClick={() => setConfirmModal({ type: 'ban', user: u })}
-                          className="btn-icon text-yellow-500 hover:text-yellow-600" title={u.is_banned ? 'Bỏ cấm' : 'Cấm'}>
-                          <Ban size={15} />
+                      {u.role !== 'admin' && (
+                        <button
+                          onClick={() => setConfirmModal({ user: u })}
+                          disabled={toggling === u.id}
+                          className={`btn-icon ${u.is_banned ? 'text-emerald-500 hover:text-emerald-600' : 'text-yellow-500 hover:text-yellow-600'}`}
+                          title={u.is_banned ? 'Mở khoá' : 'Khoá tài khoản'}
+                        >
+                          {toggling === u.id
+                            ? <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin block" />
+                            : u.is_banned ? <UserCheck size={15} /> : <Ban size={15} />
+                          }
                         </button>
-                        <button onClick={() => setConfirmModal({ type: 'delete', user: u })}
-                          className="btn-icon text-red-400 hover:text-red-500" title="Xoá">
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -116,21 +146,28 @@ export default function AdminUsers() {
       </div>
 
       {/* Confirm modal */}
-      <Modal open={!!confirmModal} onClose={() => setConfirmModal(null)}
-        title={confirmModal?.type === 'ban' ? (confirmModal?.user?.is_banned ? 'Bỏ cấm người dùng' : 'Cấm người dùng') : 'Xoá người dùng'}>
-        <p className="text-sm mb-5">
-          {confirmModal?.type === 'ban'
-            ? `Bạn có chắc muốn ${confirmModal?.user?.is_banned ? 'bỏ cấm' : 'cấm'} tài khoản `
-            : 'Bạn có chắc muốn xoá tài khoản '}
-          <strong>{confirmModal?.user?.display_name}</strong>?
-          {confirmModal?.type === 'delete' && ' Thao tác này không thể hoàn tác.'}
-        </p>
-        <div className="flex gap-2 justify-end">
-          <button onClick={() => setConfirmModal(null)} className="btn-secondary">Huỷ</button>
-          <button onClick={() => confirmModal?.type === 'ban' ? ban(confirmModal.user) : del(confirmModal.user)}
-            className={confirmModal?.type === 'delete' ? 'btn-danger' : 'btn-primary'}>
-            Xác nhận
-          </button>
+      <Modal
+        open={!!confirmModal}
+        onClose={() => setConfirmModal(null)}
+        title={confirmModal?.user?.is_banned ? 'Mở khoá tài khoản' : 'Khoá tài khoản'}
+      >
+        <div className="space-y-4">
+          <p className="text-sm">
+            {confirmModal?.user?.is_banned
+              ? <>Mở khoá tài khoản <strong>{confirmModal?.user?.display_name}</strong>? Người dùng có thể đăng nhập lại.</>
+              : <>Khoá tài khoản <strong>{confirmModal?.user?.display_name}</strong>? Người dùng sẽ không thể đăng nhập.</>
+            }
+          </p>
+          <div className="flex gap-2 justify-end">
+            <button onClick={() => setConfirmModal(null)} className="btn-secondary">Huỷ</button>
+            <button
+              onClick={() => handleToggle(confirmModal.user)}
+              disabled={toggling === confirmModal?.user?.id}
+              className={confirmModal?.user?.is_banned ? 'btn-primary' : 'btn-danger'}
+            >
+              {confirmModal?.user?.is_banned ? 'Mở khoá' : 'Khoá'}
+            </button>
+          </div>
         </div>
       </Modal>
     </div>

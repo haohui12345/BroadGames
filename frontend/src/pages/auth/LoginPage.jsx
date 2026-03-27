@@ -16,9 +16,7 @@ export default function LoginPage() {
 
   const validate = () => {
     if (!form.email.trim() || !form.password.trim())
-      return 'Vui lòng nhập đầy đủ email và mật khẩu'
-    if (form.password.length < 6)
-      return 'Mật khẩu tối thiểu 6 ký tự'
+      return 'Vui lòng nhập đầy đủ email/username và mật khẩu'
     return null
   }
 
@@ -51,11 +49,11 @@ export default function LoginPage() {
 
       <form onSubmit={handleSubmit} className="space-y-3">
         <div>
-          <label className="block text-sm font-medium mb-1.5">Email</label>
+          <label className="block text-sm font-medium mb-1.5">Email / Username</label>
           <input
-            type="email"
+            type="text"
             name="email"
-            placeholder="Nhập email"
+            placeholder="Nhập email hoặc username"
             value={form.email}
             onChange={handleChange}
             className="input"

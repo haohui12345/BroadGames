@@ -72,7 +72,8 @@ const userService = {
 
   getAchievements: async () => {
     try {
-      const res = await api.get('/users/achievements')
+      const res = await api.get('/achievements/me')
+      // BE trả về { achievements: [...] } với mỗi item có unlocked field
       return { data: res.data.achievements || [] }
     } catch {
       return { data: [] }

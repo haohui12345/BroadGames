@@ -44,7 +44,7 @@ export default function CaroFivePage() {
     setHintCell(null)
     if (won && !resultHandled.current) {
       resultHandled.current = true
-      recordResult('caro5', current === 'X' ? 'win' : 'loss')
+      setTimeout(() => recordResult('caro5', current === 'X' ? 'win' : 'loss'), 0)
     }
     if (!won && next === 'O') {
       // AI move
@@ -57,7 +57,7 @@ export default function CaroFivePage() {
           const { won: aw, line: al } = checkWin(nb2, ar, ac, 'O', WIN)
           if (aw && !resultHandled.current) {
             resultHandled.current = true
-            recordResult('caro5', 'loss')
+            setTimeout(() => recordResult('caro5', 'loss'), 0)
           }
           return { ...prev, board: nb2, current: 'X', winner: aw ? 'O' : null, winLine: al }
         })

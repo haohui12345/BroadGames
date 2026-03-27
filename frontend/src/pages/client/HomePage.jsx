@@ -23,7 +23,18 @@ export default function HomePage() {
   useEffect(() => {
     userService
       .getRanking({ type: 'global', page: 1 })
-      .then((r) => setRanking(r.data?.slice(0, 5) || []))
+      .then((r) => {
+          const raw = r.data || []
+          // Dedupe theo user_id phòng API trả về trùng
+          const seen = new Set()
+          const unique = raw.filter((item) => {
+            const id = item.user_id
+            if (!id || seen.has(id)) return false
+            seen.add(id)
+            return true
+          })
+          setRanking(unique.slice(0, 5))
+        })
       .catch(() => setRanking([]))
   }, [])
 
@@ -103,7 +114,7 @@ export default function HomePage() {
 
           <div className="card divide-y divide-[var(--border)]">
             {ranking.map((r, i) => (
-              <div key={r.user_id || i} className="flex items-center gap-3 px-4 py-3">
+              <div key={r.user_id ? `uid-${r.user_id}` : `rank-${i}`} className="flex items-center gap-3 px-4 py-3">
                 <span
                   className={`w-6 text-center font-bold text-sm ${
                     i === 0 ? 'text-yellow-500' : i === 1 ? 'text-gray-400' : i === 2 ? 'text-orange-500' : 'text-[var(--text-muted)]'
