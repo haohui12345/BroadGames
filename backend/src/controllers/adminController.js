@@ -126,5 +126,34 @@ const getStats = async (req, res, next) => {
     });
   } catch (err) { next(err); }
 };
+const toggleGame = async (req, res) => {
+  try {
+    const { id } = req.params
 
-module.exports = { getAllUsers, getUserDetail, toggleUserActive, changeUserRole, getStats };
+    // tìm game
+    const game = await db("games").where({ id }).first()
+
+    if (!game) {
+      return res.status(404).json({ message: "Game not found" })
+    }
+
+    // đảo trạng thái
+    const newStatus = !game.is_active
+
+    await db("games")
+      .where({ id })
+      .update({ is_active: newStatus })
+
+    return res.json({
+      message: "Toggle success",
+      is_active: newStatus
+    })
+
+  } catch (err) {
+    return res.status(500).json({
+      message: err.message
+    })
+  }
+}
+
+module.exports = { toggleGame, getAllUsers, getUserDetail, toggleUserActive, changeUserRole, getStats };
