@@ -361,10 +361,10 @@ const getSessionScores = async (req, res, next) => {
                 'g.name as game_name',
                 'host_id as host_id',
                 'host.username as host_username',
-                'host.avatar_url as host.avatar_url',
+                'host.avatar_url as host_avatar_url',
                 'guest_id as guest_id',
                 'guest.username as guest_username',
-                'guest.avatar_url as guest.avatar_url'
+                'guest.avatar_url as guest_avatar_url'
             )
             .first();
 
@@ -372,7 +372,7 @@ const getSessionScores = async (req, res, next) => {
             return res.status(404).json({ message: 'Không tìm thấy trận đấu' });
         };
 
-        if (!session.host_id == req.user.id && !session.guest_id == req.user.id) {
+        if (session.host_id == req.user.id && session.guest_id == req.user.id) {
             return res.status(400).json({ message: 'Bạn không có quyền xem điểm của trận đấu này' })
         };
 
