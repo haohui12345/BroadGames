@@ -43,14 +43,18 @@ import AdminStats      from '@/pages/admin/AdminStats'
 
 export default function App() {
   const { initTheme } = useThemeStore()
-  useEffect(() => { initTheme() }, [])
+
+  useEffect(() => {
+    initTheme()
+  }, [])
 
   return (
     <Routes>
+
       {/* Guest only */}
       <Route element={<GuestRoute />}>
         <Route element={<AuthLayout />}>
-          <Route path="/login"    element={<LoginPage />} />
+          <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
         </Route>
       </Route>
@@ -58,41 +62,43 @@ export default function App() {
       {/* Private - Client */}
       <Route element={<PrivateRoute />}>
         <Route element={<ClientLayout />}>
-          <Route path="/"              element={<HomePage />} />
-          <Route path="/games"         element={<GamesPage />} />
-          <Route path="/ranking"       element={<RankingPage />} />
-          <Route path="/friends"       element={<FriendsPage />} />
-          <Route path="/messages"      element={<MessagesPage />} />
-          <Route path="/messages/:id"  element={<MessagesPage />} />
-          <Route path="/achievements"  element={<AchievementsPage />} />
-          <Route path="/profile"       element={<ProfilePage />} />
-          <Route path="/users/:id"     element={<UserProfilePage />} />
+          <Route path="/" element={<HomePage />} />
+          <Route path="/games" element={<GamesPage />} />
+          <Route path="/ranking" element={<RankingPage />} />
+          <Route path="/friends" element={<FriendsPage />} />
+          <Route path="/messages" element={<MessagesPage />} />
+          <Route path="/messages/:id" element={<MessagesPage />} />
+          <Route path="/achievements" element={<AchievementsPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/users/:id" element={<UserProfilePage />} />
         </Route>
 
-        {/* Game routes - separate layout */}
+        {/* Game routes */}
         <Route element={<GameLayout />}>
-          <Route path="/play"           element={<GameSelectPage />} />
-          <Route path="/play/caro5"     element={<CaroFivePage />} />
-          <Route path="/play/caro4"     element={<CaroFourPage />} />
+          <Route path="/play" element={<GameSelectPage />} />
+          <Route path="/play/caro5" element={<CaroFivePage />} />
+          <Route path="/play/caro4" element={<CaroFourPage />} />
           <Route path="/play/tictactoe" element={<TicTacToePage />} />
-          <Route path="/play/snake"     element={<SnakePage />} />
-          <Route path="/play/match3"    element={<Match3Page />} />
-          <Route path="/play/memory"    element={<MemoryPage />} />
-          <Route path="/play/draw"      element={<DrawPage />} />
+          <Route path="/play/snake" element={<SnakePage />} />
+          <Route path="/play/match3" element={<Match3Page />} />
+          <Route path="/play/memory" element={<MemoryPage />} />
+          <Route path="/play/draw" element={<DrawPage />} />
         </Route>
       </Route>
 
       {/* Admin only */}
       <Route element={<AdminRoute />}>
         <Route element={<AdminLayout />}>
-          <Route path="/admin"         element={<AdminDashboard />} />
-          <Route path="/admin/users"   element={<AdminUsers />} />
-          <Route path="/admin/games"   element={<AdminGames />} />
-          <Route path="/admin/stats"   element={<AdminStats />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/users" element={<AdminUsers />} />
+          <Route path="/admin/games" element={<AdminGames />} />
+          <Route path="/admin/stats" element={<AdminStats />} />
         </Route>
       </Route>
 
+      {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
+
     </Routes>
   )
 }
