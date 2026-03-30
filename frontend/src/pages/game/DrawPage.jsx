@@ -1,13 +1,10 @@
 import { useRef, useState, useEffect } from 'react'
 import GameHeader from '@/components/game/GameHeader'
 import { Eraser, Trash2, Download, Minus, Plus } from 'lucide-react'
-import { useGameStore } from '@/store/gameStore'
-import toast from 'react-hot-toast'
 
 const COLORS = ['#0f1117','#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899','#ffffff','#6b7280']
 
 export default function DrawPage() {
-  const { saveGame, loadGame } = useGameStore()
   const canvasRef = useRef(null)
   const [drawing, setDrawing] = useState(false)
   const [color, setColor] = useState('#3b82f6')
@@ -66,33 +63,6 @@ export default function DrawPage() {
     ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height)
   }
 
-  const handleSave = () => {
-    try {
-      const dataUrl = canvasRef.current.toDataURL('image/png')
-      saveGame('draw', { dataUrl, color, size, eraser })
-      toast.success('Đã lưu bản vẽ!')
-    } catch {
-      toast.error('Không thể lưu')
-    }
-  }
-
-  const handleLoad = () => {
-    const s = loadGame('draw')
-    if (!s?.dataUrl) return toast.error('Chưa có bản vẽ đã lưu')
-    const img = new Image()
-    img.onload = () => {
-      const ctx = canvasRef.current.getContext('2d')
-      ctx.fillStyle = '#ffffff'
-      ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height)
-      ctx.drawImage(img, 0, 0, canvasRef.current.width, canvasRef.current.height)
-      setColor(s.color || '#3b82f6')
-      setSize(s.size || 4)
-      setEraser(!!s.eraser)
-      toast.success('Đã tải bản vẽ!')
-    }
-    img.src = s.dataUrl
-  }
-
   const download = () => {
     const link = document.createElement('a')
     link.download = 'boardzone-drawing.png'
@@ -102,15 +72,7 @@ export default function DrawPage() {
 
   return (
     <div className="flex flex-col h-full">
-      <GameHeader
-        gameSlug="draw"
-        gameName="Bảng vẽ tự do"
-        onReset={clearCanvas}
-        onSave={handleSave}
-        onLoad={handleLoad}
-        timerKey={0}
-        paused
-      />
+      <GameHeader gameSlug="draw" gameName="Bảng vẽ tự do" onReset={clearCanvas} timerKey={0} paused />
 
       <div className="flex-1 flex flex-col items-center justify-center gap-4 p-4 overflow-auto">
         {/* Toolbar */}

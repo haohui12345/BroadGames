@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import userService from '@/services/userService'
+import { mockUser } from '@/utils/mockApi'
 import { useAuthStore } from '@/store/authStore'
-import Pagination from '@/components/common/Pagination'
 
 export default function MessagesPage() {
   const { id } = useParams()
@@ -14,25 +13,22 @@ export default function MessagesPage() {
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
-  const [pageFriends, setPageFriends] = useState(1)
-  const [pageMessages, setPageMessages] = useState(1)
-  const limit = 10
 
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true)
 
-        const friendsRes = await userService.getFriends()
-        const friendsData = friendsRes.data || []
+        const friendsRes = await mockUser.getFriends()
+        const friendsData = friendsRes.data?.data || []
         setFriends(friendsData)
 
         const currentFriendId = id || friendsData[0]?.id || ''
         setSelectedFriendId(currentFriendId)
 
         if (currentFriendId) {
-          const messagesRes = await userService.getMessages(currentFriendId)
-          const messagesData = messagesRes.data || []
+          const messagesRes = await mockUser.getMessages(currentFriendId)
+          const messagesData = messagesRes.data?.data || []
           setMessages(messagesData)
         }
       } catch (error) {
@@ -50,8 +46,8 @@ export default function MessagesPage() {
       if (!selectedFriendId) return
 
       try {
-        const res = await userService.getMessages(selectedFriendId)
-        setMessages(res.data || [])
+        const res = await mockUser.getMessages(selectedFriendId)
+        setMessages(res.data?.data || [])
       } catch (error) {
         console.error('Lỗi tải hội thoại:', error)
       }
@@ -60,17 +56,10 @@ export default function MessagesPage() {
     loadMessages()
   }, [selectedFriendId])
 
-  useEffect(() => {
-    setPageMessages(1)
-  }, [selectedFriendId])
-
   const selectedFriend = useMemo(
     () => friends.find((f) => f.id === selectedFriendId),
     [friends, selectedFriendId]
   )
-
-  const friendsPageItems = friends.slice((pageFriends - 1) * limit, pageFriends * limit)
-  const messagesPageItems = messages.slice((pageMessages - 1) * limit, pageMessages * limit)
 
   const handleSelectFriend = async (friendId) => {
     setSelectedFriendId(friendId)
@@ -85,12 +74,12 @@ export default function MessagesPage() {
     try {
       setSending(true)
 
-      const res = await userService.sendMessage({
+      const res = await mockUser.sendMessage({
         receiver_id: selectedFriendId,
         content: text,
       })
 
-      const newMessage = res.data
+      const newMessage = res.data?.data
       if (newMessage) {
         setMessages((prev) => [...prev, newMessage])
       }
@@ -118,7 +107,7 @@ export default function MessagesPage() {
             ) : friends.length === 0 ? (
               <div className="p-4 text-[var(--text-muted)]">Chưa có bạn bè để nhắn tin</div>
             ) : (
-              friendsPageItems.map((friend) => (
+              friends.map((friend) => (
                 <button
                   key={friend.id}
                   onClick={() => handleSelectFriend(friend.id)}
@@ -131,9 +120,6 @@ export default function MessagesPage() {
                 </button>
               ))
             )}
-          </div>
-          <div className="p-3 border-t border-[var(--border)]">
-            <Pagination page={pageFriends} total={friends.length} limit={limit} onChange={setPageFriends} />
           </div>
         </div>
 
@@ -153,7 +139,7 @@ export default function MessagesPage() {
             ) : messages.length === 0 ? (
               <div className="text-[var(--text-muted)]">Chưa có tin nhắn nào.</div>
             ) : (
-              messagesPageItems.map((msg) => {
+              messages.map((msg) => {
                 const myId = user?.id
                 const isMine =
                   msg.sender_id === myId ||
@@ -193,11 +179,6 @@ export default function MessagesPage() {
               })
             )}
           </div>
-          {messages.length > limit && (
-            <div className="p-3 border-t border-[var(--border)]">
-              <Pagination page={pageMessages} total={messages.length} limit={limit} onChange={setPageMessages} />
-            </div>
-          )}
 
           <form
             onSubmit={handleSend}

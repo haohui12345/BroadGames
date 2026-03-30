@@ -1,7 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useGameStore } from '@/store/gameStore'
-import GameHeader from '@/components/game/GameHeader'
-import GameResult from '@/components/game/GameResult'
 
 const BOARD_SIZE = 15
 const INITIAL_SNAKE = [
@@ -23,7 +21,7 @@ function getRandomFood(snake) {
 }
 
 export default function SnakePage() {
-  const { saveGame, loadGame, recordResult } = useGameStore()
+  const { setCurrentGame, saveScore } = useGameStore()
 
   const [snake, setSnake] = useState(INITIAL_SNAKE)
   const [food, setFood] = useState(() => getRandomFood(INITIAL_SNAKE))
@@ -31,7 +29,6 @@ export default function SnakePage() {
   const [running, setRunning] = useState(false)
   const [gameOver, setGameOver] = useState(false)
   const [score, setScore] = useState(0)
-  const [timerKey, setTimerKey] = useState(0)
 
   const directionRef = useRef(INITIAL_DIRECTION)
   const scoreRef = useRef(0)
@@ -45,8 +42,13 @@ export default function SnakePage() {
   }, [score])
 
   useEffect(() => {
-    setTimerKey((k) => k + 1)
-  }, [score])
+    setCurrentGame?.({
+      key: 'snake',
+      title: 'Rắn săn mồi',
+      score,
+      time: null,
+    })
+  }, [score, setCurrentGame])
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -96,7 +98,7 @@ export default function SnakePage() {
         if (hitWall || hitSelf) {
           setRunning(false)
           setGameOver(true)
-          if (scoreRef.current > 0) recordResult('snake', 'loss')
+          saveScore?.('snake', { score: scoreRef.current, win: false })
           return prevSnake
         }
 
@@ -113,7 +115,6 @@ export default function SnakePage() {
         newSnake.pop()
         return newSnake
       })
-      setTimerKey((k) => k + 1)
     }, 180)
 
     return () => clearInterval(timer)
@@ -128,32 +129,6 @@ export default function SnakePage() {
     setGameOver(false)
     setScore(0)
     scoreRef.current = 0
-    setTimerKey((k) => k + 1)
-  }
-
-  const handleSave = () => {
-    saveGame('snake', {
-      snake,
-      food,
-      direction,
-      running,
-      gameOver,
-      score,
-    })
-  }
-
-  const handleLoad = () => {
-    const s = loadGame('snake')
-    if (!s) return
-    setSnake(s.snake || INITIAL_SNAKE)
-    setFood(s.food || getRandomFood(s.snake || INITIAL_SNAKE))
-    setDirection(s.direction || INITIAL_DIRECTION)
-    directionRef.current = s.direction || INITIAL_DIRECTION
-    setRunning(!!s.running)
-    setGameOver(!!s.gameOver)
-    setScore(s.score || 0)
-    scoreRef.current = s.score || 0
-    setTimerKey((k) => k + 1)
   }
 
   const cells = useMemo(() => {
@@ -173,35 +148,23 @@ export default function SnakePage() {
   }, [snake, food])
 
   return (
-    <div className="flex flex-col h-full">
-      <GameHeader
-        gameSlug="snake"
-        gameName="Rắn săn mồi"
-        score={score}
-        onReset={handleRestart}
-        onSave={handleSave}
-        onLoad={handleLoad}
-        timerKey={timerKey}
-        paused={!running || gameOver}
-      />
-
-      <div className="flex-1 p-6 max-w-6xl mx-auto space-y-6 w-full overflow-auto">
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Rắn săn mồi</h1>
-            <p className="text-sm text-[var(--text-muted)] mt-1">
-              Dùng phím mũi tên hoặc WASD để điều khiển. Enter để chạy/tạm dừng.
-            </p>
-          </div>
-
-          <div className="text-right">
-            <div className="text-sm text-[var(--text-muted)]">Điểm</div>
-            <div className="text-2xl font-bold">{score}</div>
-          </div>
+    <div className="p-6 max-w-6xl mx-auto space-y-6">
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Rắn săn mồi</h1>
+          <p className="text-sm text-[var(--text-muted)] mt-1">
+            Dùng phím mũi tên hoặc WASD để điều khiển. Enter để chạy/tạm dừng.
+          </p>
         </div>
 
-        <div className="grid grid-cols-[1fr_280px] gap-6">
-          <div className="card p-4">
+        <div className="text-right">
+          <div className="text-sm text-[var(--text-muted)]">Điểm</div>
+          <div className="text-2xl font-bold">{score}</div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-[1fr_280px] gap-6">
+        <div className="card p-4">
           <div
             className="grid gap-1 aspect-square w-full max-w-[680px]"
             style={{ gridTemplateColumns: `repeat(${BOARD_SIZE}, minmax(0, 1fr))` }}
@@ -223,7 +186,7 @@ export default function SnakePage() {
           </div>
         </div>
 
-          <div className="card p-4 h-fit space-y-4">
+        <div className="card p-4 h-fit space-y-4">
           <div>
             <h2 className="font-bold mb-2">Điều khiển</h2>
             <div className="text-sm text-[var(--text-muted)] space-y-1">
@@ -248,19 +211,8 @@ export default function SnakePage() {
               Game over. Nhấn “Chơi lại” để bắt đầu lại.
             </div>
           )}
-          </div>
         </div>
       </div>
-
-      {gameOver && (
-        <GameResult
-          result="lose"
-          message="Game over! 😵"
-          score={score}
-          onReplay={handleRestart}
-          gameSlug="snake"
-        />
-      )}
     </div>
   )
 }

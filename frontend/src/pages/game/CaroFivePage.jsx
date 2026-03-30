@@ -1,10 +1,11 @@
 import { useState, useCallback, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import GameBoard from '@/components/game/GameBoard'
-import GameHeader from '@/components/game/GameHeader'
+import GameHeader from '@/components/game/GameSessionHeader'
 import GameResult from '@/components/game/GameResult'
 import { useGameStore } from '@/store/gameStore'
 import { checkWin, aiMove } from '@/utils/caroLogic'
+import { getGameHelp } from '@/data/gameHelp'
 
 const ROWS = 15, COLS = 15, WIN = 5
 
@@ -15,6 +16,7 @@ function initBoard() {
 export default function CaroFivePage() {
   const [searchParams] = useSearchParams()
   const { saveGame, loadGame, recordResult } = useGameStore()
+  const help = getGameHelp('caro5')
 
   const initState = () => {
     if (searchParams.get('load') === 'true') {
@@ -88,6 +90,24 @@ export default function CaroFivePage() {
     setTimerKey(k => k + 1)
   }
 
+  const handleTimeout = () => {
+    setState((prev) => {
+      if (prev.winner || resultHandled.current) return prev
+
+      const nextWinner = prev.current === 'X' ? 'O' : 'X'
+      resultHandled.current = true
+      setTimeout(() => recordResult('caro5', nextWinner === 'X' ? 'win' : 'loss'), 0)
+
+      return {
+        ...prev,
+        current: nextWinner,
+        winner: nextWinner,
+        winLine: [],
+        score: nextWinner === 'X' ? prev.score + 100 : prev.score,
+      }
+    })
+  }
+
   const handleHint = () => {
     const { row, col } = aiMove(board, current, current === 'X' ? 'O' : 'X', WIN)
     setHintCell({ row, col })
@@ -113,6 +133,8 @@ export default function CaroFivePage() {
       <GameHeader
         gameSlug="caro5" gameName="Caro 5 trong 1 hàng"
         score={score} onReset={reset} timerKey={timerKey} paused={!!winner}
+        onTimeout={handleTimeout}
+        help={help}
         onSave={() => saveGame('caro5', state)}
         onLoad={() => { const s = loadGame('caro5'); if (s) setState(s) }}
       />

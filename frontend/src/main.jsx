@@ -5,6 +5,15 @@ import { Toaster } from 'react-hot-toast'
 import App from './App.jsx'
 import './index.css'
 
+try {
+  const rawTheme = localStorage.getItem('theme-storage')
+  const parsedTheme = rawTheme ? JSON.parse(rawTheme) : null
+  const initialTheme = parsedTheme?.state?.theme || 'dark'
+  document.documentElement.classList.toggle('dark', initialTheme === 'dark')
+} catch {
+  document.documentElement.classList.add('dark')
+}
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>

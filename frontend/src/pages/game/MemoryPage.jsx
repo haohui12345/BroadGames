@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
-import GameHeader from '@/components/game/GameHeader'
+import GameHeader from '@/components/game/GameSessionHeader'
 import GameResult from '@/components/game/GameResult'
 import { useGameStore } from '@/store/gameStore'
-import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, CornerDownLeft, Delete, Lightbulb } from 'lucide-react'
+import { ChevronLeft, ChevronRight, CornerDownLeft, Delete, Lightbulb } from 'lucide-react'
 import clsx from 'clsx'
+import { getGameHelp } from '@/data/gameHelp'
 
 const EMOJIS = ['🐶','🐱','🦊','🐻','🐼','🦁','🐸','🦋','🌸','🍕','🎮','🚀']
 const PAIRS = [...EMOJIS, ...EMOJIS]
@@ -13,6 +14,7 @@ function initCards() { return shuffle(PAIRS).map((e,i) => ({ id:i, emoji:e, flip
 
 export default function MemoryPage() {
   const { saveGame, loadGame, recordResult } = useGameStore()
+  const help = getGameHelp('memory')
   const [cards, setCards] = useState(initCards)
   const [flipped, setFlipped] = useState([]) // indices of currently revealed cards
   const [moves, setMoves] = useState(0)
@@ -20,12 +22,14 @@ export default function MemoryPage() {
   const [cursor, setCursor] = useState({ row:0, col:0 })
   const [timerKey, setTimerKey] = useState(0)
   const [done, setDone] = useState(false)
+  const [gameResult, setGameResult] = useState(null)
   const [hintShown, setHintShown] = useState([])
   const lockRef = useRef(false)
 
   const COLS = 6, ROWS = 4
 
   const flip = (idx) => {
+    if (gameResult) return
     if (lockRef.current) return
     const card = cards[idx]
     if (card.flipped || card.matched) return
@@ -49,7 +53,10 @@ export default function MemoryPage() {
             next[b] = {...next[b], flipped:false}
           }
           const allDone = next.every(c=>c.matched)
-          if (allDone) { setDone(true); recordResult('memory','win') }
+          if (allDone) {
+            setDone(true)
+            recordResult('memory','win')
+          }
           return next
         })
         setFlipped([])
@@ -61,7 +68,12 @@ export default function MemoryPage() {
   const idxOf = (r,c) => r*COLS+c
   const handleEnter = () => flip(idxOf(cursor.row, cursor.col))
   const move = (dr,dc) => setCursor(p=>({ row:Math.max(0,Math.min(ROWS-1,p.row+dr)), col:Math.max(0,Math.min(COLS-1,p.col+dc)) }))
-  const reset = () => { setCards(initCards()); setFlipped([]); setMoves(0); setScore(0); setDone(false); setCursor({row:0,col:0}); setTimerKey(k=>k+1); lockRef.current=false }
+  const reset = () => { setCards(initCards()); setFlipped([]); setMoves(0); setScore(0); setDone(false); setGameResult(null); setHintShown([]); setCursor({row:0,col:0}); setTimerKey(k=>k+1); lockRef.current=false }
+  const handleTimeout = () => {
+    if (gameResult) return
+    setGameResult({ kind: 'lose', message: 'Het gio! Thu lai van moi nhe.' })
+    recordResult('memory', 'loss')
+  }
 
   const handleHint = () => {
     const unmatched = cards.filter(c=>!c.matched&&!c.flipped)
@@ -75,9 +87,10 @@ export default function MemoryPage() {
 
   return (
     <div className="flex flex-col h-full">
-      <GameHeader gameSlug="memory" gameName="Cờ trí nhớ" score={score} onReset={reset} timerKey={timerKey} paused={done}
-        onSave={()=>saveGame('memory',{cards,moves,score})}
-        onLoad={()=>{ const s=loadGame('memory'); if(s){setCards(s.cards);setMoves(s.moves);setScore(s.score)} }} />
+      <GameHeader gameSlug="memory" gameName="Cờ trí nhớ" score={score} onReset={reset} timerKey={timerKey} paused={done || !!gameResult}
+        onTimeout={handleTimeout} help={help}
+        onSave={()=>saveGame('memory',{cards,moves,score,gameResult})}
+        onLoad={()=>{ const s=loadGame('memory'); if(s){setCards(s.cards);setFlipped([]);setMoves(s.moves);setScore(s.score);setGameResult(s.gameResult||null);setDone(false);setHintShown([]);setTimerKey(k=>k+1); lockRef.current=false} }} />
 
       <div className="flex-1 flex flex-col items-center justify-center gap-5 p-4">
         <div className="text-xs text-[var(--text-muted)]">Số lần lật: <strong>{moves}</strong> | Đã ghép: <strong>{cards.filter(c=>c.matched).length/2}/{EMOJIS.length}</strong></div>
@@ -128,6 +141,7 @@ export default function MemoryPage() {
           ))}
         </div>
       </div>
+      {gameResult ? <GameResult result={gameResult.kind} message={gameResult.message} score={score} onReplay={reset} gameSlug="memory" /> : null}
       {done && <GameResult result="win" message="Xuất sắc! 🧠 Hoàn thành!" score={score} onReplay={reset} gameSlug="memory" />}
     </div>
   )
