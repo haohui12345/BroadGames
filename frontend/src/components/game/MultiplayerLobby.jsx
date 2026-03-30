@@ -56,7 +56,7 @@ export default function MultiplayerLobby({ gameSlug, boardSize, onJoin, onBack }
     try {
       const res = await gameService.joinRoom(room.id)
       if (res.data) {
-        toast.success(`Đã vào phòng của ${room.host_username}!`)
+        toast.success(`Đã vào phòng của ${room.host_username || room.host_name || 'người chơi'}!`)
         onJoin({ ...res.data, isHost: false })
       }
     } catch (err) {
@@ -106,13 +106,13 @@ export default function MultiplayerLobby({ gameSlug, boardSize, onJoin, onBack }
                   className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border)]"
                 >
                   <div>
-                    <div className="font-medium text-sm">{room.host_username}</div>
+                    <div className="font-medium text-sm">{room.host_username || room.host_name || 'Người chơi'}</div>
                     <div className="text-xs text-[var(--text-muted)] flex items-center gap-1 mt-0.5">
                       <Clock size={10} />
                       Board {room.board_size}×{room.board_size}
                     </div>
                   </div>
-                  {room.host_id === user?.id ? (
+                  {room.host_name && user?.username && room.host_name === user.username ? (
                     <span className="text-xs text-[var(--text-muted)] px-2">Phòng của bạn</span>
                   ) : (
                     <button

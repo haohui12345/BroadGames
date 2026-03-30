@@ -1,24 +1,27 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Trophy, Gamepad2, Star, ChevronRight, Play } from 'lucide-react'
+import { Trophy, Gamepad2, Star, ChevronRight, Play, Shield } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { useGameStore } from '@/store/gameStore'
 import userService from '@/services/userService'
+import gameService from '@/services/gameService'
 
-const GAMES = [
-  { slug: 'caro5', name: 'Caro 5', emoji: '⬛', color: 'from-blue-500 to-indigo-600' },
-  { slug: 'caro4', name: 'Caro 4', emoji: '🔷', color: 'from-indigo-500 to-purple-600' },
-  { slug: 'tictactoe', name: 'Tic-tac-toe', emoji: '❌', color: 'from-purple-500 to-pink-600' },
-  { slug: 'snake', name: 'Rắn săn mồi', emoji: '🐍', color: 'from-green-500 to-emerald-600' },
-  { slug: 'match3', name: 'Ghép hàng 3', emoji: '💎', color: 'from-yellow-500 to-orange-500' },
-  { slug: 'memory', name: 'Cờ trí nhớ', emoji: '🧠', color: 'from-pink-500 to-rose-600' },
-  { slug: 'draw', name: 'Bảng vẽ', emoji: '🎨', color: 'from-teal-500 to-cyan-600' },
-]
+const GAME_COLORS = {
+  caro5: 'from-blue-500 to-indigo-600',
+  caro4: 'from-indigo-500 to-purple-600',
+  tictactoe: 'from-purple-500 to-pink-600',
+  snake: 'from-green-500 to-emerald-600',
+  match3: 'from-yellow-500 to-orange-500',
+  memory: 'from-pink-500 to-rose-600',
+  draw: 'from-teal-500 to-cyan-600',
+  drawing: 'from-teal-500 to-cyan-600',
+}
 
 export default function HomePage() {
-  const { user } = useAuthStore()
+  const { user, isAdmin } = useAuthStore()
   const { scores } = useGameStore()
   const [ranking, setRanking] = useState([])
+  const [games, setGames] = useState([])
 
   useEffect(() => {
     userService
@@ -38,6 +41,13 @@ export default function HomePage() {
       .catch(() => setRanking([]))
   }, [])
 
+  useEffect(() => {
+    gameService
+      .getGames()
+      .then((res) => setGames(res.data || []))
+      .catch(() => setGames([]))
+  }, [])
+
   const totalWins = Object.values(scores || {}).reduce((s, g) => s + (g?.wins || 0), 0)
 
   return (
@@ -50,9 +60,19 @@ export default function HomePage() {
           </p>
         </div>
 
-        <Link to="/play/caro5" className="btn-primary">
-          <Play size={16} /> Chơi ngay
-        </Link>
+        <div className="flex items-center gap-3">
+          {isAdmin?.() && (
+            <Link
+              to="/admin"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[var(--border)] text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]"
+            >
+              <Shield size={14} /> Admin
+            </Link>
+          )}
+          <Link to="/play/caro5" className="btn-primary">
+            <Play size={16} /> Chơi ngay
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-4">
@@ -82,16 +102,16 @@ export default function HomePage() {
         </div>
 
         <div className="grid grid-cols-4 gap-3">
-          {GAMES.map((g) => (
+          {games.map((g) => (
             <Link
               key={g.slug}
               to={`/play/${g.slug}`}
               className="card p-4 text-center hover:scale-105 transition-transform duration-200 cursor-pointer group"
             >
-              <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${g.color} flex items-center justify-center text-2xl mx-auto mb-3 group-hover:scale-110 transition-transform`}>
-                {g.emoji}
+              <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${GAME_COLORS[g.slug] || 'from-slate-500 to-slate-700'} flex items-center justify-center text-2xl mx-auto mb-3 group-hover:scale-110 transition-transform`}>
+                {g.emoji || '🎮'}
               </div>
-              <div className="text-sm font-semibold">{g.name}</div>
+              <div className="text-sm font-semibold">{g.name || g.slug}</div>
 
               {scores?.[g.slug] && (
                 <div className="text-xs text-[var(--text-muted)] mt-1">

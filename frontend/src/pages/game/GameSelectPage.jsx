@@ -12,6 +12,16 @@ const GAMES = [
   { slug:'draw',     name:'Bảng vẽ',       emoji:'🎨', desc:'Sáng tạo không giới hạn' },
 ]
 
+const GUIDES = {
+  caro5: 'Đặt 5 quân liên tiếp theo hàng ngang, dọc hoặc chéo để thắng.',
+  caro4: 'Tương tự caro nhưng chỉ cần 4 quân liên tiếp để thắng.',
+  tictactoe: 'Đánh dấu 3 ô liên tiếp theo hàng, cột hoặc chéo.',
+  snake: 'Dùng phím mũi tên để ăn mồi, tránh đâm vào tường hoặc chính mình.',
+  match3: 'Đổi vị trí 2 ô liền kề để tạo chuỗi từ 3 biểu tượng giống nhau.',
+  memory: 'Lật 2 thẻ mỗi lượt, ghi nhớ để tìm đúng các cặp giống nhau.',
+  draw: 'Vẽ tự do trên bàn, dùng các điều khiển để đổi màu/nét vẽ.',
+}
+
 // 7 games displayed in a 4x2 grid on the "board"
 const ROWS = 2, COLS = 4
 
@@ -56,6 +66,9 @@ export default function GameSelectPage() {
           <div className="text-2xl mb-1">{selectedGame.emoji}</div>
           <div className="font-bold text-sm">{selectedGame.name}</div>
           <div className="text-xs text-[var(--text-muted)] mt-0.5">{selectedGame.desc}</div>
+          <div className="text-xs text-[var(--text-muted)] mt-2 border-t border-[var(--border)] pt-2">
+            Hướng dẫn: {GUIDES[selectedGame.slug]}
+          </div>
         </div>
       )}
 

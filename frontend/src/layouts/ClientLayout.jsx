@@ -87,8 +87,13 @@ export default function ClientLayout() {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto">
-        <Outlet />
+      <main className="flex-1 overflow-auto flex flex-col">
+        <div className="flex-1 overflow-auto">
+          <Outlet />
+        </div>
+        <footer className="px-6 py-3 border-t border-[var(--border)] text-xs text-[var(--text-muted)]">
+          BoardZone Client - LTUD Web Project
+        </footer>
       </main>
     </div>
   )

@@ -84,17 +84,20 @@ const userService = {
   getRanking: async ({ gameSlug, type, page = 1 } = {}) => {
     if (type === 'friends') {
       const res = await api.get('/users/rankings/friends', { params: { page, game_slug: gameSlug } })
-      return { data: (res.data.rankings || []).map(mapRanking) }
+      return {
+        data: (res.data.rankings || []).map(mapRanking),
+        pagination: res.data.pagination || null,
+      }
     }
     if (type === 'personal') {
       const res = await api.get('/users/rankings/personal', { params: { page } })
-      return { data: (res.data.rankings || []).map(mapRanking) }
+      return { data: (res.data.rankings || []).map(mapRanking), pagination: res.data.pagination || null }
     }
     // global
     const params = { page }
     if (gameSlug) params.game_slug = gameSlug
     const res = await api.get('/users/rankings', { params })
-    return { data: (res.data.rankings || []).map(mapRanking) }
+    return { data: (res.data.rankings || []).map(mapRanking), pagination: res.data.pagination || null }
   },
 }
 
