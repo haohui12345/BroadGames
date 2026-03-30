@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useThemeStore } from '@/store/themeStore'
+import { useAuthStore } from '@/store/authStore'
 
 // Layouts
 import AuthLayout   from '@/layouts/AuthLayout'
@@ -43,10 +44,20 @@ import AdminStats      from '@/pages/admin/AdminStats'
 
 export default function App() {
   const { initTheme } = useThemeStore()
+  const verifyToken = useAuthStore((s) => s.verifyToken)
+  const [checking, setChecking] = useState(true)
 
   useEffect(() => {
     initTheme()
+    const token = useAuthStore.getState().token
+    if (token) {
+      verifyToken().finally(() => setChecking(false))
+    } else {
+      setChecking(false)
+    }
   }, [])
+
+  if (checking) return null
 
   return (
     <Routes>

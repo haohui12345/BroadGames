@@ -14,10 +14,14 @@ api.interceptors.request.use((config) => {
 })
 
 // Tự động logout khi token hết hạn
+// Lưu ý: KHÔNG redirect khi đang gọi các route auth public (login/register)
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
+    const url = err.config?.url || ''
+    const isAuthRoute = url.includes('/auth/login') || url.includes('/auth/register')
+
+    if (err.response?.status === 401 && !isAuthRoute) {
       useAuthStore.getState().logout()
       window.location.href = '/login'
     }

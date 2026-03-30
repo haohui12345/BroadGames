@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import api from '@/utils/api'
 
 export const useAuthStore = create(
   persist(
@@ -20,6 +21,16 @@ export const useAuthStore = create(
       logout: () => set({ user: null, token: null, isAuthenticated: false }),
       updateUser: (data) => set((s) => ({ user: { ...s.user, ...data } })),
       isAdmin: () => get().user?.role === 'admin',
+      verifyToken: async () => {
+        const { token, logout, setAuth } = get()
+        if (!token) return
+        try {
+          const { data } = await api.get('/auth/me')
+          setAuth(data.user, token)
+        } catch {
+          logout()
+        }
+      },
     }),
     { name: 'auth-storage', partialize: (s) => ({ user: s.user, token: s.token, isAuthenticated: s.isAuthenticated }) }
   )

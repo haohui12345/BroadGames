@@ -46,6 +46,11 @@ const userService = {
     return { data: res.data }
   },
 
+  declineFriendRequest: async (requesterId) => {
+    const res = await api.put(`/friends/request/${requesterId}/decline`)
+    return { data: res.data }
+  },
+
   removeFriend: async (userId) => {
     const res = await api.delete(`/friends/${userId}`)
     return { data: res.data }

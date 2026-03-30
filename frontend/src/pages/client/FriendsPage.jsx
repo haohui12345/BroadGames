@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
+import { UserPlus, UserCheck, UserX, Search, Users } from 'lucide-react'
 import userService from '@/services/userService'
-import Pagination from '@/components/common/Pagination'
+import toast from 'react-hot-toast'
 
 export default function FriendsPage() {
   const [friends, setFriends] = useState([])
@@ -8,20 +9,19 @@ export default function FriendsPage() {
   const [keyword, setKeyword] = useState('')
   const [results, setResults] = useState([])
   const [loading, setLoading] = useState(true)
-  const [pageFriends, setPageFriends] = useState(1)
-  const [pageRequests, setPageRequests] = useState(1)
-  const [pageResults, setPageResults] = useState(1)
-  const limit = 10
+  const [sentIds, setSentIds] = useState(new Set()) // id đã gửi lời mời
 
   const load = async () => {
     setLoading(true)
     try {
       const [f, r] = await Promise.all([
         userService.getFriends(),
-        userService.getFriendRequests?.(),
+        userService.getFriendRequests(),
       ])
       setFriends(f.data || [])
-      setRequests(r?.data || [])
+      setRequests(r.data || [])
+    } catch {
+      toast.error('Không thể tải dữ liệu')
     } finally {
       setLoading(false)
     }
@@ -30,101 +30,162 @@ export default function FriendsPage() {
   useEffect(() => { load() }, [])
 
   const handleSearch = async () => {
-    const res = await userService.search(keyword)
-    setResults(res.data || [])
-    setPageResults(1)
+    if (!keyword.trim()) return
+    try {
+      const res = await userService.search(keyword)
+      setResults(res.data || [])
+    } catch {
+      toast.error('Tìm kiếm thất bại')
+    }
   }
 
   const addFriend = async (id) => {
-    await userService.sendFriendRequest(id)
-    await load()
-    await handleSearch()
+    try {
+      await userService.sendFriendRequest(id)
+      setSentIds(prev => new Set([...prev, id]))
+      toast.success('Đã gửi lời mời kết bạn!')
+    } catch (err) {
+      toast.error(err?.message || 'Không thể gửi lời mời')
+    }
   }
 
-  const acceptRequest = async (id) => {
-    await userService.acceptFriendRequest(id)
-    await load()
+  const acceptRequest = async (requesterId) => {
+    try {
+      await userService.acceptFriendRequest(requesterId)
+      toast.success('Đã chấp nhận lời mời!')
+      await load()
+    } catch {
+      toast.error('Không thể chấp nhận lời mời')
+    }
+  }
+
+  const declineRequest = async (requesterId) => {
+    try {
+      await userService.declineFriendRequest(requesterId)
+      toast.success('Đã từ chối lời mời')
+      await load()
+    } catch {
+      toast.error('Không thể từ chối lời mời')
+    }
   }
 
   const removeFriend = async (id) => {
-    await userService.removeFriend(id)
-    await load()
+    try {
+      await userService.removeFriend(id)
+      toast.success('Đã hủy kết bạn')
+      await load()
+    } catch {
+      toast.error('Không thể hủy kết bạn')
+    }
   }
 
-  const friendsPageItems = friends.slice((pageFriends - 1) * limit, pageFriends * limit)
-  const requestsPageItems = requests.slice((pageRequests - 1) * limit, pageRequests * limit)
-  const resultsPageItems = results.slice((pageResults - 1) * limit, pageResults * limit)
+  const friendIds = new Set(friends.map(f => f.id))
+  const requestIds = new Set(requests.map(r => r.from_user_id))
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6">
+    <div className="p-6 max-w-5xl mx-auto space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Bạn bè</h1>
         <p className="text-sm text-[var(--text-muted)] mt-1">Tìm kiếm, kết bạn và quản lý danh sách bạn bè.</p>
       </div>
 
+      {/* Tìm kiếm */}
       <div className="card p-4 flex gap-3">
-        <input value={keyword} onChange={(e) => setKeyword(e.target.value)} className="input flex-1" placeholder="Tìm theo tên, username, email..." />
-        <button onClick={handleSearch} className="btn-primary">Tìm kiếm</button>
+        <input
+          value={keyword}
+          onChange={e => setKeyword(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && handleSearch()}
+          className="input flex-1"
+          placeholder="Tìm theo username hoặc tên..."
+        />
+        <button onClick={handleSearch} className="btn-primary flex items-center gap-2">
+          <Search size={16} /> Tìm kiếm
+        </button>
       </div>
+
+      {/* Kết quả tìm kiếm */}
+      {results.length > 0 && (
+        <div className="card p-5">
+          <h2 className="text-lg font-semibold mb-4">Kết quả tìm kiếm</h2>
+          <div className="grid grid-cols-2 gap-3">
+            {results.map(u => {
+              const isFriend = friendIds.has(u.id)
+              const isPending = requestIds.has(u.id) || sentIds.has(u.id)
+              return (
+                <div key={u.id} className="border border-[var(--border)] rounded-xl p-4 flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">{u.full_name || u.username}</div>
+                    <div className="text-sm text-[var(--text-muted)]">@{u.username}</div>
+                  </div>
+                  {isFriend ? (
+                    <span className="text-xs text-green-500 flex items-center gap-1"><UserCheck size={14}/> Bạn bè</span>
+                  ) : isPending ? (
+                    <span className="text-xs text-[var(--text-muted)] flex items-center gap-1"><UserPlus size={14}/> Đã gửi</span>
+                  ) : (
+                    <button onClick={() => addFriend(u.id)} className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1">
+                      <UserPlus size={14}/> Kết bạn
+                    </button>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-6">
+        {/* Danh sách bạn bè */}
         <div className="card p-5">
-          <h2 className="text-lg font-semibold mb-4">Danh sách bạn bè</h2>
-          {loading ? <div>Đang tải...</div> : friends.length === 0 ? <div className="text-[var(--text-muted)]">Chưa có bạn bè.</div> : (
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Users size={18}/> Bạn bè ({friends.length})
+          </h2>
+          {loading ? (
+            <div className="text-[var(--text-muted)] text-sm">Đang tải...</div>
+          ) : friends.length === 0 ? (
+            <div className="text-[var(--text-muted)] text-sm">Chưa có bạn bè.</div>
+          ) : (
             <div className="space-y-3">
-              {friendsPageItems.map((f) => (
+              {friends.map(f => (
                 <div key={f.id} className="flex items-center justify-between border border-[var(--border)] rounded-xl px-4 py-3">
                   <div>
-                    <div className="font-medium">{f.display_name}</div>
+                    <div className="font-medium">{f.display_name || f.full_name || f.username}</div>
                     <div className="text-sm text-[var(--text-muted)]">@{f.username}</div>
                   </div>
-                  <button onClick={() => removeFriend(f.id)} className="btn-ghost">Xóa</button>
+                  <button onClick={() => removeFriend(f.id)} className="btn-ghost text-red-500 text-xs flex items-center gap-1">
+                    <UserX size={14}/> Hủy
+                  </button>
                 </div>
               ))}
-              <Pagination page={pageFriends} total={friends.length} limit={limit} onChange={setPageFriends} />
             </div>
           )}
         </div>
 
+        {/* Lời mời kết bạn */}
         <div className="card p-5">
-          <h2 className="text-lg font-semibold mb-4">Lời mời kết bạn</h2>
-          {requests.length === 0 ? <div className="text-[var(--text-muted)]">Không có lời mời chờ xử lý.</div> : (
+          <h2 className="text-lg font-semibold mb-4">Lời mời kết bạn ({requests.length})</h2>
+          {requests.length === 0 ? (
+            <div className="text-[var(--text-muted)] text-sm">Không có lời mời chờ xử lý.</div>
+          ) : (
             <div className="space-y-3">
-              {requestsPageItems.map((r) => (
+              {requests.map(r => (
                 <div key={r.id} className="flex items-center justify-between border border-[var(--border)] rounded-xl px-4 py-3">
                   <div>
-                    <div className="font-medium">{r.from_name || r.from_user_name || r.from_username || r.from_user_id}</div>
-                    <div className="text-sm text-[var(--text-muted)]">{r.status}</div>
+                    <div className="font-medium">{r.from_name || r.from_username}</div>
+                    <div className="text-sm text-[var(--text-muted)]">@{r.from_username}</div>
                   </div>
-                  <button onClick={() => acceptRequest(r.from_user_id || r.id)} className="btn-primary">Chấp nhận</button>
+                  <div className="flex gap-2">
+                    <button onClick={() => acceptRequest(r.from_user_id)} className="btn-primary text-xs px-3 py-1.5">
+                      Chấp nhận
+                    </button>
+                    <button onClick={() => declineRequest(r.from_user_id)} className="btn-ghost text-xs px-3 py-1.5 text-red-500">
+                      Từ chối
+                    </button>
+                  </div>
                 </div>
               ))}
-              <Pagination page={pageRequests} total={requests.length} limit={limit} onChange={setPageRequests} />
             </div>
           )}
         </div>
-      </div>
-
-      <div className="card p-5">
-        <h2 className="text-lg font-semibold mb-4">Kết quả tìm kiếm</h2>
-        {results.length === 0 ? <div className="text-[var(--text-muted)]">Chưa có kết quả.</div> : (
-          <div className="grid grid-cols-2 gap-3">
-            {resultsPageItems.map((u) => (
-              <div key={u.id} className="border border-[var(--border)] rounded-xl p-4 flex items-center justify-between">
-                <div>
-                  <div className="font-medium">{u.display_name}</div>
-                  <div className="text-sm text-[var(--text-muted)]">@{u.username}</div>
-                </div>
-                <button disabled={u.is_friend} onClick={() => addFriend(u.id)} className="btn-primary disabled:opacity-50">
-                  {u.is_friend ? 'Đã là bạn' : 'Kết bạn'}
-                </button>
-              </div>
-            ))}
-            <div className="col-span-2">
-              <Pagination page={pageResults} total={results.length} limit={limit} onChange={setPageResults} />
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )

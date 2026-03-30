@@ -91,12 +91,7 @@ export default function LoginPage() {
         </button>
       </form>
 
-      {/* Tài khoản test từ seed BE */}
-      <div className="mt-5 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] p-3 text-sm">
-        <p className="font-medium mb-1">Tài khoản test</p>
-        <p className="text-[var(--text-muted)]">User: player1@test.com / password123</p>
-        <p className="text-[var(--text-muted)]">Admin: admin@ltudweb.com / admin123</p>
-      </div>
+
 
       <p className="text-center text-sm text-[var(--text-muted)] mt-5">
         Chưa có tài khoản?{' '}

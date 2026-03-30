@@ -8,7 +8,7 @@ router.post('/register', register);
 router.post('/login', login);
 
 //protected routes (cần token)
-router.get('/me', getMe);
-router.post('/change-password', changePassword);
+router.get('/me', authenticateToken, getMe);
+router.post('/change-password', authenticateToken, changePassword);
 
 module.exports = router;

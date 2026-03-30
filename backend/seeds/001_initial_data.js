@@ -118,7 +118,7 @@ exports.seed = async function (knex) {
         max_players: 2,
       },
       {
-        code: 'drawing',
+        code: 'draw',
         name: 'Bảng vẽ tự do',
         description: 'Vẽ tự do trên bàn game',
         rules: 'Dùng chuột hoặc phím để vẽ. Chọn màu sắc và kích thước nét vẽ tuỳ thích.',
