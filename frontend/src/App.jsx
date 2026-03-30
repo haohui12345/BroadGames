@@ -43,7 +43,6 @@ import AdminGames      from '@/pages/admin/AdminGames'
 import AdminStats      from '@/pages/admin/AdminStats'
 
 export default function App() {
-<<<<<<< HEAD
   const { initTheme } = useThemeStore()
   const verifyToken = useAuthStore((s) => s.verifyToken)
   const [checking, setChecking] = useState(true)
@@ -57,13 +56,6 @@ export default function App() {
       setChecking(false)
     }
   }, [])
-=======
-  const initTheme = useThemeStore((state) => state.initTheme)
-
-  useEffect(() => {
-    initTheme()
-  }, [initTheme])
->>>>>>> 8aba81ce0b8f5a79bca0ab877b84250ae793342f
 
   if (checking) return null
 
