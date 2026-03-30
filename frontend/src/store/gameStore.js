@@ -1,12 +1,14 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import gameService from '@/services/gameService'
+import api from '@/utils/api'
+import toast from 'react-hot-toast'
 
 export const useGameStore = create(
   persist(
     (set, get) => ({
-      scores: {},       // { [gameSlug]: { wins, losses, draws } }
-      savedGames: {},   // { [gameSlug]: savedSnapshot }
+      scores: {},
+      savedGames: {},
       timerDuration: 30,
 
       saveGame: (gameSlug, snapshot) =>
@@ -21,9 +23,7 @@ export const useGameStore = create(
           return { savedGames: next }
         }),
 
-      // Ghi nhận kết quả local + gọi API finishSession nếu có session_id
       recordResult: async (gameSlug, result, sessionId, userId) => {
-        // Cập nhật local
         set((s) => {
           const prev = s.scores[gameSlug] || { wins: 0, losses: 0, draws: 0 }
           return {
@@ -38,7 +38,6 @@ export const useGameStore = create(
           }
         })
 
-        // Gọi API cập nhật ranking nếu có session
         if (sessionId) {
           const score = result === 'win' ? 100 : result === 'draw' ? 20 : 0
           await gameService.finishSession({
@@ -48,6 +47,15 @@ export const useGameStore = create(
             score_guest: 0,
           })
         }
+
+        // Tự động check và unlock thành tựu sau mỗi kết quả
+        try {
+          const res = await api.post('/achievements/check')
+          const newly = res.data?.newly_unlocked || []
+          newly.forEach(a => {
+            toast.success(`🏆 Mở khóa thành tựu: ${a.name}!`, { duration: 4000 })
+          })
+        } catch {}
       },
 
       setTimerDuration: (seconds) => set({ timerDuration: seconds }),
