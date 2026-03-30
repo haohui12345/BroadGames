@@ -3,12 +3,17 @@ import api from '@/utils/api'
 const userService = {
   search: async (q) => {
     const res = await api.get('/users/search', { params: { q } })
-    return { data: res.data.users || [] }
+    return { data: (res.data.users || []).map(mapUser) }
+  },
+
+  getMyProfile: async () => {
+    const res = await api.get('/users/profile')
+    return { data: mapUser(res.data?.user || res.data) }
   },
 
   getProfile: async (id) => {
     const res = await api.get(`/users/${id}`)
-    return { data: res.data.user || null }
+    return { data: mapUser(res.data.user || null) }
   },
 
   getFriends: async () => {
@@ -89,21 +94,26 @@ const userService = {
   getRanking: async ({ gameSlug, type, page = 1 } = {}) => {
     if (type === 'friends') {
       const res = await api.get('/users/rankings/friends', { params: { page, game_slug: gameSlug } })
-      return {
-        data: (res.data.rankings || []).map(mapRanking),
-        pagination: res.data.pagination || null,
-      }
+      return { data: (res.data.rankings || []).map(mapRanking) }
     }
     if (type === 'personal') {
-      const res = await api.get('/users/rankings/personal', { params: { page } })
-      return { data: (res.data.rankings || []).map(mapRanking), pagination: res.data.pagination || null }
+      const res = await api.get('/users/rankings/me', { params: { page } })
+      return { data: (res.data.rankings || []).map(mapRanking) }
     }
     // global
     const params = { page }
     if (gameSlug) params.game_slug = gameSlug
     const res = await api.get('/users/rankings', { params })
-    return { data: (res.data.rankings || []).map(mapRanking), pagination: res.data.pagination || null }
+    return { data: (res.data.rankings || []).map(mapRanking) }
   },
+}
+
+function mapUser(user) {
+  if (!user) return null
+  return {
+    ...user,
+    display_name: user.display_name || user.full_name || user.username,
+  }
 }
 
 function mapRanking(r) {

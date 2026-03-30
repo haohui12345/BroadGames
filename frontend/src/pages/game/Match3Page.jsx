@@ -1,9 +1,10 @@
 import { useState, useCallback } from 'react'
-import GameHeader from '@/components/game/GameHeader'
+import GameHeader from '@/components/game/GameSessionHeader'
 import GameResult from '@/components/game/GameResult'
 import { useGameStore } from '@/store/gameStore'
-import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, CornerDownLeft, Delete, Lightbulb } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ChevronUp, CornerDownLeft, Delete } from 'lucide-react'
 import clsx from 'clsx'
+import { getGameHelp } from '@/data/gameHelp'
 
 const ROWS = 8, COLS = 8, GEMS = ['💎','🔮','⭐','🔶','🟢','🔴']
 
@@ -41,12 +42,14 @@ function applyGravity(board) {
 
 export default function Match3Page() {
   const { saveGame, loadGame, recordResult } = useGameStore()
+  const help = getGameHelp('match3')
   const [board, setBoard] = useState(initBoard)
   const [score, setScore] = useState(0)
   const [cursor, setCursor] = useState({ row:3, col:3 })
   const [selected, setSelected] = useState(null)
   const [timerKey, setTimerKey] = useState(0)
   const [animating, setAnimating] = useState(false)
+  const [result, setResult] = useState(null)
 
   const processBoard = useCallback((b, addScore=0) => {
     const matches = findMatches(b)
@@ -81,12 +84,19 @@ export default function Match3Page() {
   }
 
   const move = (dr,dc) => setCursor(p=>({ row:Math.max(0,Math.min(ROWS-1,p.row+dr)), col:Math.max(0,Math.min(COLS-1,p.col+dc)) }))
-  const reset = () => { setBoard(initBoard()); setScore(0); setSelected(null); setTimerKey(k=>k+1) }
+  const reset = () => { setBoard(initBoard()); setScore(0); setSelected(null); setResult(null); setTimerKey(k=>k+1) }
+  const handleTimeout = () => {
+    if (result) return
+    setSelected(null)
+    setResult({ kind: 'draw', message: 'Het gio! Diem cua ban da duoc ghi nhan.' })
+    recordResult('match3', 'draw')
+  }
 
   return (
     <div className="flex flex-col h-full">
-      <GameHeader gameSlug="match3" gameName="Ghép hàng 3" score={score} onReset={reset} timerKey={timerKey} paused={animating}
-        onSave={() => saveGame('match3', { board, score })} onLoad={() => { const s=loadGame('match3'); if(s){setBoard(s.board);setScore(s.score)} }} />
+      <GameHeader gameSlug="match3" gameName="Ghép hàng 3" score={score} onReset={reset} timerKey={timerKey} paused={animating || !!result}
+        onTimeout={handleTimeout} help={help}
+        onSave={() => saveGame('match3', { board, score })} onLoad={() => { const s=loadGame('match3'); if(s){setBoard(s.board);setScore(s.score);setSelected(null);setAnimating(false);setResult(null);setTimerKey(k=>k+1)} }} />
       <div className="flex-1 flex flex-col items-center justify-center gap-5 p-4">
         <div className="text-xs text-[var(--text-muted)]">
           {selected ? '✅ Đã chọn — di chuyển đến ô kề và nhấn ENTER để đổi' : 'Chọn một viên đá rồi đổi với ô kề'}
@@ -131,6 +141,9 @@ export default function Match3Page() {
           ))}
         </div>
       </div>
+      {result ? (
+        <GameResult result={result.kind} message={result.message} score={score} onReplay={reset} gameSlug="match3" />
+      ) : null}
     </div>
   )
 }

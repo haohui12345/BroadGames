@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import userService from '@/services/userService'
-import Pagination from '@/components/common/Pagination'
 
 const games = [
   { slug: '', name: 'Tất cả trò chơi' },
@@ -17,12 +16,10 @@ export default function RankingPage() {
   const [ranking, setRanking] = useState([])
   const [type, setType] = useState('global')
   const [gameSlug, setGameSlug] = useState('')
-  const [page, setPage] = useState(1)
-  const [pagination, setPagination] = useState(null)
 
   useEffect(() => {
     userService
-      .getRanking({ type, gameSlug, page })
+      .getRanking({ type, gameSlug, page: 1 })
       .then((r) => {
         const raw = r.data || []
         const seen = new Set()
@@ -32,16 +29,8 @@ export default function RankingPage() {
           return true
         })
         setRanking(unique)
-        setPagination(r.pagination || null)
       })
-      .catch(() => {
-        setRanking([])
-        setPagination(null)
-      })
-  }, [type, gameSlug, page])
-
-  useEffect(() => {
-    setPage(1)
+      .catch(() => setRanking([]))
   }, [type, gameSlug])
 
   return (
@@ -67,7 +56,7 @@ export default function RankingPage() {
       <div className="card divide-y divide-[var(--border)]">
         {ranking.map((item, index) => (
           <div key={item.user_id ? `uid-${item.user_id}` : `rank-${index}`} className="px-4 py-4 flex items-center gap-4">
-            <div className="w-8 text-center font-bold">{(page - 1) * 10 + index + 1}</div>
+            <div className="w-8 text-center font-bold">{index + 1}</div>
             <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center font-bold">
               {item.display_name?.[0]?.toUpperCase() || '?'}
             </div>
@@ -80,14 +69,6 @@ export default function RankingPage() {
         ))}
         {!ranking.length && <div className="px-4 py-8 text-center text-[var(--text-muted)]">Chưa có dữ liệu xếp hạng.</div>}
       </div>
-
-      {/* Pagination: backend trả pagination chắc chắn ở type=friends */}
-      <Pagination
-        page={page}
-        total={pagination?.total || (type === 'friends' ? ranking.length : 0)}
-        limit={pagination?.page_size || 10}
-        onChange={(p) => setPage(Math.max(1, p))}
-      />
     </div>
   )
 }

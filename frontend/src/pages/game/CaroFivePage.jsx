@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { io } from 'socket.io-client'
 import GameBoard from '@/components/game/GameBoard'
-import GameHeader from '@/components/game/GameHeader'
+import GameHeader from '@/components/game/GameSessionHeader'
 import GameResult from '@/components/game/GameResult'
 import MultiplayerLobby from '@/components/game/MultiplayerLobby'
 import { useGameStore } from '@/store/gameStore'
@@ -185,6 +185,24 @@ export default function CaroFivePage() {
     setHintCell(null)
     resultHandled.current = false
     setTimerKey(k => k + 1)
+  }
+
+  const handleTimeout = () => {
+    setState((prev) => {
+      if (prev.winner || resultHandled.current) return prev
+
+      const nextWinner = prev.current === 'X' ? 'O' : 'X'
+      resultHandled.current = true
+      setTimeout(() => recordResult('caro5', nextWinner === 'X' ? 'win' : 'loss'), 0)
+
+      return {
+        ...prev,
+        current: nextWinner,
+        winner: nextWinner,
+        winLine: [],
+        score: nextWinner === 'X' ? prev.score + 100 : prev.score,
+      }
+    })
   }
 
   const handleHint = () => {

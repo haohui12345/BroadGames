@@ -152,7 +152,7 @@ const getPendingRequests = async (req, res, next) => {
             .join('users as u', 'u.id', 'f.requester_id')
             .where({
                 'f.receiver_id': req.user.id, 
-                'f.status': 'pending '})
+                'f.status': 'pending'})
             .select(
                 'u.id', 
                 'u.username', 

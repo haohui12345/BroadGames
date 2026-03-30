@@ -1,10 +1,11 @@
 import { useState, useCallback, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import GameBoard from '@/components/game/GameBoard'
-import GameHeader from '@/components/game/GameHeader'
+import GameHeader from '@/components/game/GameSessionHeader'
 import GameResult from '@/components/game/GameResult'
 import { useGameStore } from '@/store/gameStore'
 import { checkWin, aiMove } from '@/utils/caroLogic'
+import { getGameHelp } from '@/data/gameHelp'
 
 const ROWS = 12, COLS = 12, WIN = 4
 
@@ -15,6 +16,7 @@ function initBoard() {
 export default function CaroFourPage() {
   const [searchParams] = useSearchParams()
   const { saveGame, loadGame, recordResult } = useGameStore()
+  const help = getGameHelp('caro4')
 
   const initState = () => {
     if (searchParams.get('load') === 'true') {
@@ -64,6 +66,21 @@ export default function CaroFourPage() {
   const handleEnter = (t) => { if (t?.row != null) { setCursor(t); place(t.row, t.col) } else place(cursor.row, cursor.col) }
   const move = (dr, dc) => setCursor(p => ({ row: Math.max(0, Math.min(ROWS-1, p.row+dr)), col: Math.max(0, Math.min(COLS-1, p.col+dc)) }))
   const reset = () => { setState({ board: initBoard(), current: 'X', winner: null, winLine: [], score: 0 }); setCursor({ row: 5, col: 5 }); setHintCell(null); resultHandled.current = false; setTimerKey(k => k+1) }
+  const handleTimeout = () => {
+    setState((prev) => {
+      if (prev.winner || resultHandled.current) return prev
+      const nextWinner = prev.current === 'X' ? 'O' : 'X'
+      resultHandled.current = true
+      setTimeout(() => recordResult('caro4', nextWinner === 'X' ? 'win' : 'loss'), 0)
+      return {
+        ...prev,
+        current: nextWinner,
+        winner: nextWinner,
+        winLine: [],
+        score: nextWinner === 'X' ? prev.score + 80 : prev.score,
+      }
+    })
+  }
   const handleHint = () => { const { row, col } = aiMove(board, current, current === 'X' ? 'O' : 'X', WIN); setHintCell({ row, col }); setCursor({ row, col }) }
 
   const renderCell = (r, c) => {
@@ -76,6 +93,7 @@ export default function CaroFourPage() {
   return (
     <div className="flex flex-col h-full">
       <GameHeader gameSlug="caro4" gameName="Caro 4 trong 1 hàng" score={score} onReset={reset} timerKey={timerKey} paused={!!winner}
+        onTimeout={handleTimeout} help={help}
         onSave={() => saveGame('caro4', state)} onLoad={() => { const s = loadGame('caro4'); if (s) setState(s) }} />
       <div className="flex-1 flex flex-col items-center justify-center gap-4 p-4 overflow-auto">
         <div className="flex items-center gap-3 text-sm">

@@ -2,7 +2,7 @@ const db = require('../config/db');
 
 // POST /api/message/:id
 // gửi tin nhắn đến người dùng có id là :id
-const sendMessage = async (req, res) => {
+const sendMessage = async (req, res, next) => {
     try {
         const receiverId = req.params.id;
         const { content } = req.body
