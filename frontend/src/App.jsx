@@ -20,20 +20,20 @@ import HomePage        from '@/pages/client/HomePage'
 import GamesPage       from '@/pages/client/GamesPage'
 import RankingPage     from '@/pages/client/RankingPage'
 import FriendsPage     from '@/pages/client/FriendsPage'
-import MessagesPage    from '@/pages/client/MessagesPage'
+import MessagesPage    from '@/pages/client/MessagesCenterPage'
 import AchievementsPage from '@/pages/client/AchievementsPage'
-import ProfilePage     from '@/pages/client/ProfilePage'
-import UserProfilePage from '@/pages/client/UserProfilePage'
+import ProfilePage     from '@/pages/client/ProfileSettingsPage'
+import UserProfilePage from '@/pages/client/UserProfileDetailsPage'
 
 // Game pages
 import GameSelectPage  from '@/pages/game/GameSelectPage'
 import CaroFivePage    from '@/pages/game/CaroFivePage'
 import CaroFourPage    from '@/pages/game/CaroFourPage'
 import TicTacToePage   from '@/pages/game/TicTacToePage'
-import SnakePage       from '@/pages/game/SnakePage'
+import SnakePage       from '@/pages/game/SnakeArcadePage'
 import Match3Page      from '@/pages/game/Match3Page'
 import MemoryPage      from '@/pages/game/MemoryPage'
-import DrawPage        from '@/pages/game/DrawPage'
+import DrawPage        from '@/pages/game/DrawingBoardPage'
 
 // Admin pages
 import AdminDashboard  from '@/pages/admin/AdminDashboard'
@@ -42,11 +42,11 @@ import AdminGames      from '@/pages/admin/AdminGames'
 import AdminStats      from '@/pages/admin/AdminStats'
 
 export default function App() {
-  const { initTheme } = useThemeStore()
+  const initTheme = useThemeStore((state) => state.initTheme)
 
   useEffect(() => {
     initTheme()
-  }, [])
+  }, [initTheme])
 
   return (
     <Routes>

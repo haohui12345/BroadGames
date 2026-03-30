@@ -3,18 +3,38 @@ import { Save, FolderOpen, RotateCcw, Clock, BookOpen, Star } from 'lucide-react
 import { useGameStore } from '@/store/gameStore'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
+import GameHelpModal from '@/components/game/GameHelpModal'
 
-export default function GameHeader({ gameSlug, gameName, score, onReset, onSave, onLoad, timerKey, paused }) {
+export default function GameHeader({
+  gameSlug,
+  gameName,
+  score,
+  onReset,
+  onSave,
+  onLoad,
+  timerKey,
+  paused,
+  onTimeout,
+  showTimer = true,
+  help,
+}) {
   const { timerDuration, setTimerDuration, savedGames } = useGameStore()
   const [timeLeft, setTimeLeft] = useState(timerDuration)
   const [showTimerEdit, setShowTimerEdit] = useState(false)
+  const [showHelp, setShowHelp] = useState(false)
   const intervalRef = useRef(null)
+  const timeoutHandledRef = useRef(false)
 
-  // Reset timer whenever timerKey changes (new turn)
   useEffect(() => {
+    if (!showTimer) return
     setTimeLeft(timerDuration)
+    timeoutHandledRef.current = false
     clearInterval(intervalRef.current)
-    if (paused) return
+  }, [showTimer, timerKey, timerDuration])
+
+  useEffect(() => {
+    clearInterval(intervalRef.current)
+    if (!showTimer || paused || timeLeft <= 0) return
     intervalRef.current = setInterval(() => {
       setTimeLeft(t => {
         if (t <= 1) { clearInterval(intervalRef.current); return 0 }
@@ -22,7 +42,13 @@ export default function GameHeader({ gameSlug, gameName, score, onReset, onSave,
       })
     }, 1000)
     return () => clearInterval(intervalRef.current)
-  }, [timerKey, timerDuration, paused])
+  }, [showTimer, paused, timeLeft])
+
+  useEffect(() => {
+    if (!showTimer || timeLeft > 0 || timeoutHandledRef.current) return
+    timeoutHandledRef.current = true
+    onTimeout?.()
+  }, [showTimer, timeLeft, onTimeout])
 
   const handleSave = () => {
     onSave?.()

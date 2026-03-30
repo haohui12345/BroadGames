@@ -22,10 +22,12 @@ const authService = {
     return res.data
   },
 
-  updateProfile: async ({ display_name, bio }) => {
+  updateProfile: async ({ display_name, bio, username, avatar_url }) => {
     const res = await api.put('/users/profile', {
       full_name: display_name,
       bio,
+      username,
+      avatar_url,
     })
     return res.data
   },
