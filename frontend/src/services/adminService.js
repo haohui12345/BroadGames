@@ -1,4 +1,5 @@
 import api from '@/utils/api'
+import gameService from '@/services/gameService'
 
 const adminService = {
   getStats: async () => {
@@ -61,6 +62,7 @@ const adminService = {
   // Dùng game.id (số nguyên), không dùng slug
   toggleGame: async (gameId) => {
     const res = await api.patch(`/games/${gameId}/toggle`)
+    gameService.clearGamesCache()
     return { data: res.data }
   },
 
@@ -69,6 +71,7 @@ const adminService = {
       board_size: payload.board_size,
       is_enabled: payload.enabled,
     })
+    gameService.clearGamesCache()
     return { data: res.data }
   },
 }

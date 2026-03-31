@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import GameHeader from '@/components/game/GameSessionHeader'
+import GameToolbar from '@/components/game/GameToolbar'
 import GameResult from '@/components/game/GameResult'
 import { useGameStore } from '@/store/gameStore'
 import { getGameHelp } from '@/data/gameHelp'
+import { ensureSoloSession, loadGameSnapshot, recordSoloGameResult, saveGameSnapshot } from '@/utils/gamePersistence'
 
 const BOARD_SIZE = 15
 const INITIAL_SNAKE = [
@@ -24,7 +25,7 @@ function getRandomFood(snake) {
 }
 
 export default function SnakeArcadePage() {
-  const { saveGame, loadGame, recordResult } = useGameStore()
+  const { recordResult } = useGameStore()
   const help = getGameHelp('snake')
 
   const [snake, setSnake] = useState(INITIAL_SNAKE)
@@ -35,10 +36,19 @@ export default function SnakeArcadePage() {
   const [score, setScore] = useState(0)
   const [timerKey, setTimerKey] = useState(0)
   const [gameResult, setGameResult] = useState(null)
+  const [soloSessionId, setSoloSessionId] = useState(null)
 
   const directionRef = useRef(INITIAL_DIRECTION)
   const scoreRef = useRef(0)
   const resultHandledRef = useRef(false)
+
+  const ensureCurrentSoloSession = async () =>
+    ensureSoloSession({
+      sessionId: soloSessionId,
+      setSessionId: setSoloSessionId,
+      gameSlug: 'snake',
+      boardSize: BOARD_SIZE,
+    })
 
   useEffect(() => {
     directionRef.current = direction
@@ -72,13 +82,22 @@ export default function SnakeArcadePage() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [gameResult])
 
-  const finishGame = (message) => {
+  const finishGame = async (message) => {
     if (resultHandledRef.current) return
     resultHandledRef.current = true
     setRunning(false)
     setGameOver(true)
     setGameResult({ kind: 'lose', message })
-    recordResult('snake', 'loss')
+    await recordSoloGameResult({
+      ensureSession: ensureCurrentSoloSession,
+      setSessionId: setSoloSessionId,
+      recordResult,
+      gameSlug: 'snake',
+      result: 'loss',
+      winnerSide: 'guest',
+      scoreHost: scoreRef.current,
+      scoreGuest: scoreRef.current + 1,
+    })
   }
 
   useEffect(() => {
@@ -103,7 +122,7 @@ export default function SnakeArcadePage() {
         )
 
         if (hitWall || hitSelf) {
-          finishGame('Ban da va cham. Thu lai van moi nhe.')
+          finishGame('Bạn đã va chạm. Thử lại ván mới nhé.')
           return prevSnake
         }
 
@@ -136,12 +155,13 @@ export default function SnakeArcadePage() {
     scoreRef.current = 0
     resultHandledRef.current = false
     setGameResult(null)
+    setSoloSessionId(null)
     setTimerKey((value) => value + 1)
   }
 
-  const handleLoad = () => {
-    const snapshot = loadGame('snake')
-    if (!snapshot) return
+  const handleLoad = async () => {
+    const snapshot = await loadGameSnapshot({ gameSlug: 'snake', setSessionId: setSoloSessionId })
+    if (!snapshot) return false
     setSnake(snapshot.snake || INITIAL_SNAKE)
     setFood(snapshot.food || getRandomFood(INITIAL_SNAKE))
     setDirection(snapshot.direction || INITIAL_DIRECTION)
@@ -153,11 +173,12 @@ export default function SnakeArcadePage() {
     resultHandledRef.current = Boolean(snapshot.gameResult)
     setGameResult(snapshot.gameResult || null)
     setTimerKey((value) => value + 1)
+    return true
   }
 
   const handleTimeout = () => {
     if (gameResult) return
-    finishGame('Het gio! Ban can bat dau van moi.')
+    finishGame('Hết giờ! Bạn cần bắt đầu ván mới.')
   }
 
   const cells = useMemo(() => {
@@ -178,18 +199,24 @@ export default function SnakeArcadePage() {
 
   return (
     <div className="flex flex-col h-full">
-      <GameHeader
+      <GameToolbar
         gameSlug="snake"
-        gameName="Ran san moi"
+        gameName="Rắn săn mồi"
         score={score}
         onReset={reset}
-        onSave={() => saveGame('snake', {
+        onSave={() => saveGameSnapshot({
+          sessionId: soloSessionId,
+          setSessionId: setSoloSessionId,
+          gameSlug: 'snake',
+          boardSize: BOARD_SIZE,
+          snapshot: {
           snake,
           food,
           direction: directionRef.current,
           score,
           gameOver,
           gameResult,
+          },
         })}
         onLoad={handleLoad}
         timerKey={timerKey}
@@ -201,14 +228,14 @@ export default function SnakeArcadePage() {
       <div className="p-6 max-w-6xl mx-auto space-y-6 w-full">
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Ran san moi</h1>
+            <h1 className="text-2xl font-bold">Rắn săn mồi</h1>
             <p className="text-sm text-[var(--text-muted)] mt-1">
-              Dung phim mui ten hoac WASD de dieu khien. Enter de chay hoac tam dung.
+              Dùng phím mũi tên hoặc WASD để điều khiển. Enter để chạy hoặc tạm dừng.
             </p>
           </div>
 
           <div className="text-right">
-            <div className="text-sm text-[var(--text-muted)]">Diem</div>
+            <div className="text-sm text-[var(--text-muted)]">Điểm</div>
             <div className="text-2xl font-bold">{score}</div>
           </div>
         </div>
@@ -238,11 +265,11 @@ export default function SnakeArcadePage() {
 
           <div className="card p-4 h-fit space-y-4">
             <div>
-              <h2 className="font-bold mb-2">Dieu khien</h2>
+              <h2 className="font-bold mb-2">Điều khiển</h2>
               <div className="text-sm text-[var(--text-muted)] space-y-1">
-                <div>Mui ten hoac W A S D: di chuyen</div>
-                <div>Enter: chay hoac tam dung</div>
-                <div>Save/Load: luu va tai lai van dang choi</div>
+                <div>Mũi tên hoặc W A S D: di chuyển</div>
+                <div>Enter: chạy hoặc tạm dừng</div>
+                <div>Save/Load: lưu và tải lại ván đang chơi</div>
               </div>
             </div>
 
@@ -251,19 +278,19 @@ export default function SnakeArcadePage() {
               className="btn-primary w-full"
               disabled={!!gameResult}
             >
-              {running ? 'Tam dung' : 'Bat dau'}
+              {running ? 'Tạm dừng' : 'Bắt đầu'}
             </button>
 
             <button
               onClick={reset}
               className="w-full px-4 py-2 rounded-xl border border-[var(--border)] hover:bg-[var(--bg-secondary)] transition"
             >
-              Choi lai
+              Chơi lại
             </button>
 
             {gameOver ? (
               <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400">
-                Van choi da ket thuc. Ban co the load lai snapshot da luu hoac bat dau van moi.
+                Ván chơi đã kết thúc. Bạn có thể load lại snapshot đã lưu hoặc bắt đầu ván mới.
               </div>
             ) : null}
           </div>

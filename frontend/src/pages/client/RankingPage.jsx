@@ -7,7 +7,7 @@ const games = [
   { slug: 'caro4', name: 'Caro hàng 4' },
   { slug: 'tictactoe', name: 'Tic-tac-toe' },
   { slug: 'snake', name: 'Rắn săn mồi' },
-  { slug: 'match3', name: 'Ghép hình 3' },
+  { slug: 'match3', name: 'Ghép hàng 3' },
   { slug: 'memory', name: 'Cờ trí nhớ' },
   { slug: 'draw', name: 'Bảng vẽ tự do' },
 ]
@@ -38,7 +38,7 @@ export default function RankingPage() {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold">Bảng xếp hạng</h1>
-          <p className="text-sm text-[var(--text-muted)] mt-1">Xem ranking theo từng trò chơi: toàn hệ thống, bạn bè, cá nhân.</p>
+          <p className="text-sm text-[var(--text-muted)] mt-1">Xem xếp hạng theo từng trò chơi: toàn hệ thống, bạn bè, cá nhân.</p>
         </div>
 
         <div className="flex gap-3">
@@ -62,7 +62,7 @@ export default function RankingPage() {
             </div>
             <div className="flex-1">
               <div className="font-medium">{item.display_name}</div>
-              <div className="text-xs text-[var(--text-muted)]">@{item.username || 'user'}</div>
+              <div className="text-xs text-[var(--text-muted)]">@{item.username || 'nguoi-dung'}</div>
             </div>
             <div className="font-bold">{item.score ?? item.wins ?? 0}</div>
           </div>

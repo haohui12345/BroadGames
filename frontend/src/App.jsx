@@ -8,6 +8,7 @@ import AuthLayout   from '@/layouts/AuthLayout'
 import ClientLayout from '@/layouts/ClientLayout'
 import AdminLayout  from '@/layouts/AdminLayout'
 import GameLayout   from '@/layouts/GameLayout'
+import GameAvailabilityGuard from '@/components/game/GameAvailabilityGuard'
 
 // Guards
 import { PrivateRoute, AdminRoute, GuestRoute } from '@/routes/guards'
@@ -87,13 +88,13 @@ export default function App() {
         {/* Game routes */}
         <Route element={<GameLayout />}>
           <Route path="/play" element={<GameSelectPage />} />
-          <Route path="/play/caro5" element={<CaroFivePage />} />
-          <Route path="/play/caro4" element={<CaroFourPage />} />
-          <Route path="/play/tictactoe" element={<TicTacToePage />} />
-          <Route path="/play/snake" element={<SnakePage />} />
-          <Route path="/play/match3" element={<Match3Page />} />
-          <Route path="/play/memory" element={<MemoryPage />} />
-          <Route path="/play/draw" element={<DrawPage />} />
+          <Route path="/play/caro5" element={<GameAvailabilityGuard slug="caro5"><CaroFivePage /></GameAvailabilityGuard>} />
+          <Route path="/play/caro4" element={<GameAvailabilityGuard slug="caro4"><CaroFourPage /></GameAvailabilityGuard>} />
+          <Route path="/play/tictactoe" element={<GameAvailabilityGuard slug="tictactoe"><TicTacToePage /></GameAvailabilityGuard>} />
+          <Route path="/play/snake" element={<GameAvailabilityGuard slug="snake"><SnakePage /></GameAvailabilityGuard>} />
+          <Route path="/play/match3" element={<GameAvailabilityGuard slug="match3"><Match3Page /></GameAvailabilityGuard>} />
+          <Route path="/play/memory" element={<GameAvailabilityGuard slug="memory"><MemoryPage /></GameAvailabilityGuard>} />
+          <Route path="/play/draw" element={<GameAvailabilityGuard slug="draw"><DrawPage /></GameAvailabilityGuard>} />
         </Route>
       </Route>
 

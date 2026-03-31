@@ -86,7 +86,7 @@ export default function FriendsPage() {
     <div className="p-6 max-w-5xl mx-auto space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Bạn bè</h1>
-        <p className="text-sm text-[var(--text-muted)] mt-1">Tìm kiếm, kết bạn và quản lý danh sách bạn bè.</p>
+        <p className="text-sm text-[var(--text-muted)] mt-1">Tìm kiếm người dùng, kết bạn và quản lý danh sách bạn bè.</p>
       </div>
 
       {/* Tìm kiếm */}
@@ -96,7 +96,7 @@ export default function FriendsPage() {
           onChange={e => setKeyword(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleSearch()}
           className="input flex-1"
-          placeholder="Tìm theo username hoặc tên..."
+          placeholder="Tìm theo username hoặc tên hiển thị..."
         />
         <button onClick={handleSearch} className="btn-primary flex items-center gap-2">
           <Search size={16} /> Tìm kiếm

@@ -5,12 +5,12 @@ export default function GameHelpModal({ open, onClose, help }) {
     <Modal
       open={open}
       onClose={onClose}
-      title={help?.title || 'Huong dan'}
+      title={help?.title || 'Hướng dẫn'}
       size="lg"
     >
       <div className="space-y-3">
         <p className="text-sm text-[var(--text-muted)]">
-          Cac nut dieu khien van uu tien hien thi tren ban game. Phan nay chi tom tat cach choi va thao tac.
+          Các nút điều khiển vẫn ưu tiên hiển thị trên bàn game. Phần này chỉ tóm tắt cách chơi và thao tác.
         </p>
         <ul className="space-y-2 text-sm leading-6 text-[var(--text-primary)] list-disc pl-5">
           {(help?.items || []).map((item) => (

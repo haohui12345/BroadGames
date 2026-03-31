@@ -4,6 +4,7 @@ import { Trophy, Gamepad2, Star, ChevronRight, Play } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { useGameStore } from '@/store/gameStore'
 import userService from '@/services/userService'
+import gameService from '@/services/gameService'
 
 const GAMES = [
   { slug: 'caro5', name: 'Caro 5', emoji: '⬛', color: 'from-blue-500 to-indigo-600' },
@@ -15,10 +16,13 @@ const GAMES = [
   { slug: 'draw', name: 'Bảng vẽ', emoji: '🎨', color: 'from-teal-500 to-cyan-600' },
 ]
 
+const GAME_COLORS = Object.fromEntries(GAMES.map((game) => [game.slug, game.color]))
+
 export default function HomePage() {
   const { user } = useAuthStore()
   const { scores } = useGameStore()
   const [ranking, setRanking] = useState([])
+  const [games, setGames] = useState([])
 
   useEffect(() => {
     userService
@@ -36,9 +40,16 @@ export default function HomePage() {
           setRanking(unique.slice(0, 5))
         })
       .catch(() => setRanking([]))
+
+    gameService
+      .getGames({ onlyEnabled: true, force: true })
+      .then((response) => setGames(response.data || []))
+      .catch(() => setGames([]))
   }, [])
 
   const totalWins = Object.values(scores || {}).reduce((s, g) => s + (g?.wins || 0), 0)
+  const firstGamePath = games[0]?.slug ? `/play/${games[0].slug}` : '/games'
+  const featuredGames = games.slice(0, 4)
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-8 animate-fade-in">
@@ -50,7 +61,7 @@ export default function HomePage() {
           </p>
         </div>
 
-        <Link to="/play/caro5" className="btn-primary">
+        <Link to={firstGamePath} className="btn-primary">
           <Play size={16} /> Chơi ngay
         </Link>
       </div>
@@ -81,14 +92,17 @@ export default function HomePage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-4 gap-3">
-          {GAMES.map((g) => (
+        {featuredGames.length === 0 ? (
+          <div className="card p-4 text-sm text-[var(--text-muted)]">Hiện chưa có game nào đang được bật.</div>
+        ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+          {featuredGames.map((g) => (
             <Link
               key={g.slug}
               to={`/play/${g.slug}`}
               className="card p-4 text-center hover:scale-105 transition-transform duration-200 cursor-pointer group"
             >
-              <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${g.color} flex items-center justify-center text-2xl mx-auto mb-3 group-hover:scale-110 transition-transform`}>
+              <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${g.color || GAME_COLORS[g.slug] || 'from-slate-500 to-slate-700'} flex items-center justify-center text-2xl mx-auto mb-3 group-hover:scale-110 transition-transform`}>
                 {g.emoji}
               </div>
               <div className="text-sm font-semibold">{g.name}</div>
@@ -101,6 +115,7 @@ export default function HomePage() {
             </Link>
           ))}
         </div>
+        )}
       </div>
 
       {ranking.length > 0 && (

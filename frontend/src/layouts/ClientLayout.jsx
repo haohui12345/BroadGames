@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
-import { Home, Gamepad2, Trophy, Users, MessageSquare, Medal, LogOut, Settings, Sun, Moon, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Home, Gamepad2, Trophy, Users, MessageSquare, Medal, LogOut, Settings, Sun, Moon, ChevronLeft, ChevronRight, Shield } from 'lucide-react'
 import { useState } from 'react'
 import { useAuthStore } from '@/store/authStore'
 import { useThemeStore } from '@/store/themeStore'
@@ -67,6 +67,18 @@ export default function ClientLayout() {
             {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
             {!collapsed && <span>{theme === 'dark' ? 'Sáng' : 'Tối'}</span>}
           </button>
+
+          {user?.role === 'admin' && (
+            <NavLink
+              to="/admin"
+              className={({ isActive }) => clsx('nav-link', collapsed ? 'justify-center px-0' : '', isActive ? 'active' : '')}
+              title={collapsed ? 'Admin' : undefined}
+            >
+              <Shield size={18} className="text-primary-500" />
+              {!collapsed && <span className="text-primary-500 font-medium">Admin</span>}
+            </NavLink>
+          )}
+
           <NavLink to="/profile" className={({ isActive }) => clsx('nav-link', collapsed ? 'justify-center px-0' : '', isActive ? 'active' : '')}>
             <Settings size={18} />
             {!collapsed && <span>Tài khoản</span>}

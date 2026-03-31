@@ -36,6 +36,8 @@ const authService = {
     const res = await api.post('/auth/change-password', { oldPassword, newPassword })
     return res.data
   },
+
+  logout: async () => ({ ok: true }),
 }
 
 export default authService
