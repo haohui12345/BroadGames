@@ -20,7 +20,7 @@ import RegisterPage from '@/pages/auth/RegisterPage'
 // Client pages
 import HomePage        from '@/pages/client/HomePage'
 import GamesPage       from '@/pages/client/GamesPage'
-import RankingPage     from '@/pages/client/RankingPage'
+import RankingSimplePage from '@/pages/client/RankingSimplePage'
 import FriendsPage     from '@/pages/client/FriendsPage'
 import MessagesPage    from '@/pages/client/MessagesCenterPage'
 import AchievementsPage from '@/pages/client/AchievementsPage'
@@ -76,7 +76,7 @@ export default function App() {
         <Route element={<ClientLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/games" element={<GamesPage />} />
-          <Route path="/ranking" element={<RankingPage />} />
+          <Route path="/ranking" element={<RankingSimplePage />} />
           <Route path="/friends" element={<FriendsPage />} />
           <Route path="/messages" element={<MessagesPage />} />
           <Route path="/messages/:id" element={<MessagesPage />} />
