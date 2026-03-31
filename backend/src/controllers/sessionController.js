@@ -386,13 +386,8 @@ const getSessionScores = async (req, res, next) => {
             return res.status(404).json({ message: 'Không tìm thấy trận đấu' });
         };
 
-<<<<<<< HEAD
         if (session.host_id !== req.user.id && session.guest_id !== req.user.id) {
             return res.status(400).json({ message: 'Bạn không có quyền xem điểm của trận đấu này' })
-=======
-        if (session.host_id != req.user.id && session.guest_id != req.user.id) {
-            return res.status(403).json({ message: 'Bạn không có quyền xem điểm của trận đấu này' })
->>>>>>> 7c559e7c88d12d0503a6a6c951cd27bb972e63cf
         };
 
         return res.json({ 
