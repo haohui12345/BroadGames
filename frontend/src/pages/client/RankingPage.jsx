@@ -42,13 +42,26 @@ export default function RankingPage() {
         </div>
 
         <div className="flex gap-3">
-          <select value={gameSlug} onChange={(e) => setGameSlug(e.target.value)} className="px-3 py-2 rounded-xl border border-[var(--border)] bg-transparent">
-            {games.map((g) => <option key={g.slug} value={g.slug}>{g.name}</option>)}
+          <select
+            value={gameSlug}
+            onChange={(e) => setGameSlug(e.target.value)}
+            className="px-3 py-2 rounded-xl border border-gray-700 bg-black text-white"
+          >
+            {games.map((g) => (
+              <option key={g.slug} value={g.slug} className="bg-black text-white">
+                {g.name}
+              </option>
+            ))}
           </select>
-          <select value={type} onChange={(e) => setType(e.target.value)} className="px-3 py-2 rounded-xl border border-[var(--border)] bg-transparent">
-            <option value="global">Toàn hệ thống</option>
-            <option value="friends">Bạn bè</option>
-            <option value="personal">Cá nhân</option>
+
+          <select
+            value={type}
+            onChange={(e) => setType(e.target.value)}
+            className="px-3 py-2 rounded-xl border border-gray-700 bg-black text-white"
+          >
+            <option value="global" className="bg-black text-white">Toàn hệ thống</option>
+            <option value="friends" className="bg-black text-white">Bạn bè</option>
+            <option value="personal" className="bg-black text-white">Cá nhân</option>
           </select>
         </div>
       </div>
