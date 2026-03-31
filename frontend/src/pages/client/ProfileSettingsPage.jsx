@@ -62,9 +62,9 @@ export default function ProfileSettingsPage() {
         ...nextUser,
         display_name: nextUser.display_name || nextUser.full_name || nextUser.username,
       })
-      toast.success('Cap nhat profile thanh cong')
+      toast.success('Cập nhật profile thành công')
     } catch (error) {
-      toast.error(error.message || 'Khong the cap nhat profile')
+      toast.error(error.message || 'Không thể cập nhật profile')
     } finally {
       setSaving(false)
     }
@@ -73,7 +73,7 @@ export default function ProfileSettingsPage() {
   if (loading) {
     return (
       <div className="p-6 max-w-3xl mx-auto">
-        <div className="card p-6 text-sm text-[var(--text-muted)]">Dang tai thong tin tai khoan...</div>
+        <div className="card p-6 text-sm text-[var(--text-muted)]">Đang tải thông tin tài khoản...</div>
       </div>
     )
   }
@@ -81,8 +81,8 @@ export default function ProfileSettingsPage() {
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Tai khoan</h1>
-        <p className="text-sm text-[var(--text-muted)] mt-1">Quan ly ten hien thi, username va thong tin gioi thieu.</p>
+        <h1 className="text-2xl font-bold">Tài khoản</h1>
+        <p className="text-sm text-[var(--text-muted)] mt-1">Quản lý tên hiển thị, username và thông tin giới thiệu.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="card p-6 space-y-4">
@@ -97,7 +97,7 @@ export default function ProfileSettingsPage() {
         </div>
 
         <div>
-          <label className="block text-sm mb-2">Ten hien thi</label>
+          <label className="block text-sm mb-2">Tên hiển thị</label>
           <input
             name="display_name"
             value={form.display_name}
@@ -114,11 +114,11 @@ export default function ProfileSettingsPage() {
             readOnly
             className="input opacity-70 cursor-not-allowed"
           />
-          <p className="text-xs text-[var(--text-muted)] mt-1">Email hien tai chi de xem, backend chua ho tro doi email.</p>
+          <p className="text-xs text-[var(--text-muted)] mt-1">Email hiện tại chỉ để xem, backend chưa hỗ trợ đổi email.</p>
         </div>
 
         <div>
-          <label className="block text-sm mb-2">Gioi thieu</label>
+          <label className="block text-sm mb-2">Giới thiệu</label>
           <textarea
             name="bio"
             rows="4"
@@ -129,7 +129,7 @@ export default function ProfileSettingsPage() {
         </div>
 
         <button className="btn-primary" type="submit" disabled={saving}>
-          {saving ? 'Dang luu...' : 'Luu thay doi'}
+          {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
         </button>
       </form>
     </div>

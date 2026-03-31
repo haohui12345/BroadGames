@@ -24,6 +24,10 @@ export const useGameStore = create(
         }),
 
       recordResult: async (gameSlug, result, sessionId, userId) => {
+        const options = typeof sessionId === 'object' && sessionId !== null
+          ? sessionId
+          : { sessionId, userId }
+
         set((s) => {
           const prev = s.scores[gameSlug] || { wins: 0, losses: 0, draws: 0 }
           return {
@@ -38,13 +42,18 @@ export const useGameStore = create(
           }
         })
 
-        if (sessionId) {
-          const score = result === 'win' ? 100 : result === 'draw' ? 20 : 0
+        if (options.sessionId) {
+          const scoreHost = options.scoreHost ?? (result === 'win' ? 100 : 0)
+          const scoreGuest = options.scoreGuest ?? 0
+          const winnerSide = options.winnerSide
+            || (result === 'win' ? 'host' : result === 'loss' ? 'guest' : 'draw')
+
           await gameService.finishSession({
-            session_id: sessionId,
-            winner_id: result === 'win' ? userId : null,
-            score_host: score,
-            score_guest: 0,
+            session_id: options.sessionId,
+            winner_id: options.winnerId ?? (result === 'win' ? options.userId : null),
+            winner_side: winnerSide,
+            score_host: scoreHost,
+            score_guest: scoreGuest,
           })
         }
 
@@ -58,7 +67,10 @@ export const useGameStore = create(
         } catch {}
       },
 
-      setTimerDuration: (seconds) => set({ timerDuration: seconds }),
+      setTimerDuration: (seconds) => {
+        const nextSeconds = Number(seconds)
+        set({ timerDuration: Number.isFinite(nextSeconds) && nextSeconds >= 5 ? nextSeconds : 30 })
+      },
     }),
     { name: 'game-storage' }
   )

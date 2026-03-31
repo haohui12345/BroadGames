@@ -39,7 +39,7 @@ export default function UserProfileDetailsPage() {
   if (loading) {
     return (
       <div className="p-6 max-w-3xl mx-auto">
-        <div className="card p-6 text-sm text-[var(--text-muted)]">Dang tai ho so nguoi dung...</div>
+        <div className="card p-6 text-sm text-[var(--text-muted)]">Đang tải hồ sơ người dùng...</div>
       </div>
     )
   }
@@ -47,7 +47,7 @@ export default function UserProfileDetailsPage() {
   if (!profile) {
     return (
       <div className="p-6 max-w-3xl mx-auto">
-        <div className="card p-6 text-sm text-[var(--text-muted)]">Khong tim thay nguoi dung.</div>
+        <div className="card p-6 text-sm text-[var(--text-muted)]">Không tìm thấy người dùng.</div>
       </div>
     )
   }
@@ -60,7 +60,7 @@ export default function UserProfileDetailsPage() {
         </div>
         <h1 className="text-2xl font-bold">{profile.display_name}</h1>
         <p className="text-sm text-[var(--text-muted)] mt-1">@{profile.username}</p>
-        <p className="mt-4 text-sm">{profile.bio || 'Chua co mo ta.'}</p>
+        <p className="mt-4 text-sm">{profile.bio || 'Chưa có mô tả.'}</p>
       </div>
     </div>
   )

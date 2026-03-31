@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { io } from 'socket.io-client'
 import GameBoard from '@/components/game/GameBoard'
-import GameHeader from '@/components/game/GameSessionHeader'
+import GameToolbar from '@/components/game/GameToolbar'
 import GameResult from '@/components/game/GameResult'
 import MultiplayerLobby from '@/components/game/MultiplayerLobby'
 import { useGameStore } from '@/store/gameStore'
 import { useAuthStore } from '@/store/authStore'
 import { getGameHelp } from '@/data/gameHelp'
+import { ensureSoloSession, loadGameSnapshot, recordSoloGameResult, saveGameSnapshot } from '@/utils/gamePersistence'
 import toast from 'react-hot-toast'
 
 const GAME_SLUG = 'tictactoe'
@@ -45,7 +46,7 @@ function bestMove(b) {
 }
 
 export default function TicTacToePage() {
-  const { saveGame, loadGame, recordResult } = useGameStore()
+  const { recordResult } = useGameStore()
   const { token, user } = useAuthStore()
   const help = getGameHelp('tictactoe')
 
@@ -61,7 +62,36 @@ export default function TicTacToePage() {
   const [score, setScore] = useState(0)
   const [cursor, setCursor] = useState({ row: 1, col: 1 })
   const [timerKey, setTimerKey] = useState(0)
+  const [soloSessionId, setSoloSessionId] = useState(null)
   const resultHandled = useRef(false)
+
+  const ensureCurrentSoloSession = useCallback(
+    () => ensureSoloSession({
+      sessionId: soloSessionId,
+      setSessionId: setSoloSessionId,
+      gameSlug: GAME_SLUG,
+      boardSize: 3,
+    }),
+    [soloSessionId]
+  )
+
+  const recordSoloResult = useCallback(
+    async (resultKind, options = {}) => {
+      await recordSoloGameResult({
+        ensureSession: ensureCurrentSoloSession,
+        setSessionId: setSoloSessionId,
+        recordResult,
+        gameSlug: GAME_SLUG,
+        userId: user?.id,
+        result: resultKind,
+        winnerSide: options.winnerSide,
+        scoreHost: options.scoreHost,
+        scoreGuest: options.scoreGuest,
+        winnerId: options.winnerId,
+      })
+    },
+    [ensureCurrentSoloSession, recordResult, user?.id]
+  )
 
   useEffect(() => {
     if (mode !== 'vs_player' || !session) return
@@ -72,9 +102,13 @@ export default function TicTacToePage() {
       const nb = board_state.flat ? board_state : Object.values(board_state)
       setBoard(nb)
       setCurrent(mySymbol)
-      setTimerKey(k => k + 1)
+      setTimerKey((k) => k + 1)
     })
-    socket.on('session_finished', ({ winner_id }) => {
+    socket.on('session_finished', ({ winner_id, winner_side }) => {
+      if (winner_side === 'draw' || !winner_id) {
+        setResult({ winner: 'draw', line: [] })
+        return
+      }
       const w = winner_id === user.id ? mySymbol : (mySymbol === 'X' ? 'O' : 'X')
       setResult({ winner: w, line: [] })
     })
@@ -96,7 +130,7 @@ export default function TicTacToePage() {
         const res = await gameService.getSession(session.id)
         if (res.data?.status === 'playing' && res.data?.guest_id) {
           setWaitingOpponent(false); setSession(res.data)
-          setBoard(initBoard()); setCurrent('X'); setResult(null)
+          setBoard(initBoard()); setCurrent('X'); setResult(null); setTimerKey((k) => k + 1)
           toast.success('Đối thủ đã vào phòng!'); clearInterval(interval)
         }
       } catch {}
@@ -110,13 +144,16 @@ export default function TicTacToePage() {
 
     const nb = [...board]; nb[idx] = current
     const res = checkWinner(nb)
-    setBoard(nb); setTimerKey(k => k + 1)
+    setBoard(nb)
+    if (mode === 'vs_player') setTimerKey((k) => k + 1)
 
     if (mode === 'vs_player' && socketRef.current) {
       socketRef.current.emit('move', { sessionId: session.id, board_state: nb, move_history: [] })
-      if (res.winner && res.winner !== 'draw') {
+      if (res.winner) {
         socketRef.current.emit('finish_session', {
-          sessionId: session.id, winner_id: user.id,
+          sessionId: session.id,
+          winner_id: res.winner === 'draw' ? null : (current === 'X' ? (session?.host_id ?? user.id) : (session?.guest_id ?? user.id)),
+          winner_side: res.winner === 'draw' ? 'draw' : current === 'X' ? 'host' : 'guest',
           score_host: current === 'X' ? score + 50 : 0,
           score_guest: current === 'O' ? score + 50 : 0,
         })
@@ -128,9 +165,14 @@ export default function TicTacToePage() {
       if (!resultHandled.current) {
         resultHandled.current = true
         if (mode !== 'vs_player') {
-          if (res.winner === 'X') { setScore(s => s + 50); recordResult(GAME_SLUG, 'win') }
-          else if (res.winner === 'draw') recordResult(GAME_SLUG, 'draw')
-          else recordResult(GAME_SLUG, 'loss')
+          if (res.winner === 'X') {
+            setScore(s => s + 50)
+            void recordSoloResult('win', { winnerSide: 'host', scoreHost: score + 50, winnerId: user?.id })
+          } else if (res.winner === 'draw') {
+            void recordSoloResult('draw', { winnerSide: 'draw', scoreHost: score })
+          } else {
+            void recordSoloResult('loss', { winnerSide: 'guest', scoreHost: score, scoreGuest: 50 })
+          }
         }
       }
       return
@@ -148,29 +190,45 @@ export default function TicTacToePage() {
           if (res2.winner && !resultHandled.current) {
             resultHandled.current = true
             setResult(res2)
-            if (res2.winner === 'draw') recordResult(GAME_SLUG, 'draw')
-            else recordResult(GAME_SLUG, 'loss')
+            if (res2.winner === 'draw') {
+              void recordSoloResult('draw', { winnerSide: 'draw', scoreHost: score })
+            } else {
+              void recordSoloResult('loss', { winnerSide: 'guest', scoreHost: score, scoreGuest: 50 })
+            }
           } else { setCurrent('X') }
           return nb2
         })
-        setTimerKey(k => k + 1)
       }, 400)
     } else {
       setCurrent(current === 'X' ? 'O' : 'X')
     }
-  }, [board, current, result, score, mode, mySymbol, session])
+  }, [board, current, result, score, mode, mySymbol, session, recordSoloResult, user?.id])
 
   const idxOf = (r, c) => r * 3 + c
   const handleEnter = (t) => { if (t?.row != null) { setCursor(t); place(idxOf(t.row, t.col)) } else place(idxOf(cursor.row, cursor.col)) }
   const move = (dr, dc) => setCursor(p => ({ row: Math.max(0, Math.min(2, p.row+dr)), col: Math.max(0, Math.min(2, p.col+dc)) }))
-  const reset = () => { setBoard(initBoard()); setCurrent('X'); setResult(null); setScore(0); setCursor({ row:1, col:1 }); resultHandled.current = false; setTimerKey(k => k+1) }
+  const reset = () => { setBoard(initBoard()); setCurrent('X'); setResult(null); setScore(0); setCursor({ row:1, col:1 }); resultHandled.current = false; setTimerKey(k => k+1); setSoloSessionId(null) }
   const handleTimeout = () => {
     if (result?.winner || resultHandled.current) return
     const nextWinner = current === 'X' ? 'O' : 'X'
     setResult({ winner: nextWinner, line: [] })
     resultHandled.current = true
-    if (nextWinner === 'X') { setScore(v => v + 50); recordResult(GAME_SLUG, 'win') }
-    else recordResult(GAME_SLUG, 'loss')
+    if (mode === 'vs_player' && socketRef.current && session) {
+      socketRef.current.emit('finish_session', {
+        sessionId: session.id,
+        winner_id: nextWinner === 'X' ? session?.host_id : session?.guest_id,
+        winner_side: nextWinner === 'X' ? 'host' : 'guest',
+        score_host: nextWinner === 'X' ? 50 : 0,
+        score_guest: nextWinner === 'O' ? 50 : 0,
+      })
+      return
+    }
+    if (nextWinner === 'X') {
+      setScore(v => v + 50)
+      void recordSoloResult('win', { winnerSide: 'host', scoreHost: score + 50, winnerId: user?.id })
+    } else {
+      void recordSoloResult('loss', { winnerSide: 'guest', scoreHost: score, scoreGuest: 50 })
+    }
   }
   const handleAbandon = () => {
     if (socketRef.current && session) socketRef.current.emit('abandon_session', { sessionId: session.id })
@@ -218,12 +276,28 @@ export default function TicTacToePage() {
 
   return (
     <div className="flex flex-col h-full">
-      <GameHeader gameSlug={GAME_SLUG} gameName="Tic-tac-toe" score={score}
+      <GameToolbar gameSlug={GAME_SLUG} gameName="Tic-tac-toe" score={score}
         onReset={mode === 'vs_player' ? handleAbandon : reset}
-        timerKey={timerKey} paused={!!result}
+        timerKey={timerKey} paused={!!result || (mode === 'vs_player' && (waitingOpponent || !isMyTurn))}
         onTimeout={handleTimeout} help={help}
-        onSave={() => saveGame(GAME_SLUG, { board, current, result, score })}
-        onLoad={() => { const s = loadGame(GAME_SLUG); if (s) { setBoard(s.board); setCurrent(s.current); setResult(s.result); setScore(s.score) } }} />
+        onSave={() => saveGameSnapshot({
+          sessionId: soloSessionId,
+          setSessionId: setSoloSessionId,
+          gameSlug: GAME_SLUG,
+          boardSize: 3,
+          snapshot: { board, current, result, score },
+        })}
+        onLoad={async () => {
+          const snapshot = await loadGameSnapshot({ gameSlug: GAME_SLUG, setSessionId: setSoloSessionId })
+          if (!snapshot) return false
+          setBoard(snapshot.board || initBoard())
+          setCurrent(snapshot.current || 'X')
+          setResult(snapshot.result || null)
+          setScore(snapshot.score || 0)
+          resultHandled.current = Boolean(snapshot.result?.winner)
+          setTimerKey(k => k + 1)
+          return true
+        }} />
       <div className="flex-1 flex flex-col items-center justify-center gap-6 p-4">
         {waitingOpponent ? (
           <div className="text-center space-y-3">

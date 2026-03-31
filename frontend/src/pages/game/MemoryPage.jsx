@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { io } from 'socket.io-client'
-import GameHeader from '@/components/game/GameSessionHeader'
+import GameToolbar from '@/components/game/GameToolbar'
 import GameResult from '@/components/game/GameResult'
 import MultiplayerLobby from '@/components/game/MultiplayerLobby'
 import { useGameStore } from '@/store/gameStore'
@@ -8,6 +8,7 @@ import { useAuthStore } from '@/store/authStore'
 import { ChevronLeft, ChevronRight, CornerDownLeft, Delete, Lightbulb } from 'lucide-react'
 import clsx from 'clsx'
 import { getGameHelp } from '@/data/gameHelp'
+import { ensureSoloSession, loadGameSnapshot, recordSoloGameResult, saveGameSnapshot } from '@/utils/gamePersistence'
 import toast from 'react-hot-toast'
 
 const GAME_SLUG = 'memory'
@@ -17,9 +18,10 @@ const COLS = 6, ROWS = 4
 
 function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5) }
 function initCards() { return shuffle(PAIRS).map((e,i) => ({ id:i, emoji:e, flipped:false, matched:false })) }
+const GameHeader = GameToolbar
 
 export default function MemoryPage() {
-  const { saveGame, loadGame, recordResult } = useGameStore()
+  const { recordResult } = useGameStore()
   const { token, user } = useAuthStore()
   const help = getGameHelp('memory')
 
@@ -41,7 +43,36 @@ export default function MemoryPage() {
   const [done, setDone] = useState(false)
   const [gameResult, setGameResult] = useState(null)
   const [hintShown, setHintShown] = useState([])
+  const [soloSessionId, setSoloSessionId] = useState(null)
   const lockRef = useRef(false)
+
+  const ensureCurrentSoloSession = useCallback(
+    () => ensureSoloSession({
+      sessionId: soloSessionId,
+      setSessionId: setSoloSessionId,
+      gameSlug: GAME_SLUG,
+      boardSize: ROWS,
+    }),
+    [soloSessionId]
+  )
+
+  const recordSoloResult = useCallback(
+    async (resultKind, options = {}) => {
+      await recordSoloGameResult({
+        ensureSession: ensureCurrentSoloSession,
+        setSessionId: setSoloSessionId,
+        recordResult,
+        gameSlug: GAME_SLUG,
+        userId: user?.id,
+        result: resultKind,
+        winnerSide: options.winnerSide,
+        scoreHost: options.scoreHost,
+        scoreGuest: options.scoreGuest,
+        winnerId: options.winnerId,
+      })
+    },
+    [ensureCurrentSoloSession, recordResult, user?.id]
+  )
 
   useEffect(() => {
     if (mode !== 'vs_player' || !session) return
@@ -51,14 +82,16 @@ export default function MemoryPage() {
 
     socket.on('opponent_moved', ({ board_state }) => {
       // board_state = { cards, flipped_pair, matched, oppScore }
+      const receiverTurn = board_state?.receiverTurn ?? true
       if (board_state?.cards) setCards(board_state.cards)
       if (board_state?.oppScore != null) setOppScore(board_state.oppScore)
-      setMyTurn(true)
-      setTimerKey(k => k + 1)
+      setMyTurn(receiverTurn)
+      if (receiverTurn) setTimerKey((k) => k + 1)
     })
-    socket.on('session_finished', ({ winner_id }) => {
+    socket.on('session_finished', ({ winner_id, winner_side }) => {
       const iWin = winner_id === user.id
-      setGameResult({ kind: iWin ? 'win' : winner_id ? 'lose' : 'draw', message: iWin ? 'Bạn thắng! 🎉' : winner_id ? 'Bạn thua! 😢' : 'Hòa! 🤝' })
+      const isDraw = winner_side === 'draw'
+      setGameResult({ kind: isDraw ? 'draw' : iWin ? 'win' : 'lose', message: isDraw ? 'Hòa! 🤝' : iWin ? 'Bạn thắng! 🎉' : 'Bạn thua! 😢' })
     })
     socket.on('session_abandoned', ({ abandoned_by }) => {
       if (abandoned_by !== user.id) {
@@ -78,7 +111,7 @@ export default function MemoryPage() {
         const res = await gameService.getSession(session.id)
         if (res.data?.status === 'playing' && res.data?.guest_id) {
           setWaitingOpponent(false); setSession(res.data)
-          setCards(initCards()); setFlipped([]); setMoves(0); setScore(0); setMyScore(0); setOppScore(0); setDone(false); setGameResult(null)
+          setCards(initCards()); setFlipped([]); setMoves(0); setScore(0); setMyScore(0); setOppScore(0); setDone(false); setGameResult(null); setTimerKey((k) => k + 1)
           toast.success('Đối thủ đã vào phòng!'); clearInterval(interval)
         }
       } catch {}
@@ -120,14 +153,19 @@ export default function MemoryPage() {
             const newMyScore = matched ? myScore + 20 : myScore
             socketRef.current.emit('move', {
               sessionId: session.id,
-              board_state: { cards: next, oppScore: newMyScore },
+              board_state: { cards: next, oppScore: newMyScore, receiverTurn: !matched },
               move_history: [],
             })
             if (allDone) {
-              const winnerId = newMyScore > oppScore ? user.id : newMyScore < oppScore ? null : null
+              const winnerId = newMyScore === oppScore
+                ? null
+                : newMyScore > oppScore
+                  ? (isHost ? session?.host_id ?? user?.id : session?.guest_id ?? user?.id)
+                  : (isHost ? session?.guest_id : session?.host_id)
               socketRef.current.emit('finish_session', {
                 sessionId: session.id,
-                winner_id: newMyScore > oppScore ? user.id : newMyScore < oppScore ? 'opponent' : null,
+                winner_id: winnerId,
+                winner_side: newMyScore === oppScore ? 'draw' : newMyScore > oppScore ? (isHost ? 'host' : 'guest') : (isHost ? 'guest' : 'host'),
                 score_host: isHost ? newMyScore : oppScore,
                 score_guest: isHost ? oppScore : newMyScore,
               })
@@ -136,7 +174,8 @@ export default function MemoryPage() {
           }
 
           if (allDone && mode !== 'vs_player') {
-            setDone(true); recordResult(GAME_SLUG, 'win')
+            setDone(true)
+            void recordSoloResult('win', { winnerSide: 'host', scoreHost: score + 20, winnerId: user?.id })
           }
           return next
         })
@@ -149,11 +188,22 @@ export default function MemoryPage() {
   const idxOf = (r,c) => r*COLS+c
   const handleEnter = () => flip(idxOf(cursor.row, cursor.col))
   const move = (dr,dc) => setCursor(p=>({ row:Math.max(0,Math.min(ROWS-1,p.row+dr)), col:Math.max(0,Math.min(COLS-1,p.col+dc)) }))
-  const reset = () => { setCards(initCards()); setFlipped([]); setMoves(0); setScore(0); setMyScore(0); setOppScore(0); setDone(false); setGameResult(null); setHintShown([]); setCursor({row:0,col:0}); setTimerKey(k=>k+1); lockRef.current=false }
+  const reset = () => { setCards(initCards()); setFlipped([]); setMoves(0); setScore(0); setMyScore(0); setOppScore(0); setDone(false); setGameResult(null); setHintShown([]); setCursor({row:0,col:0}); setSoloSessionId(null); setTimerKey(k=>k+1); lockRef.current=false }
   const handleTimeout = () => {
     if (gameResult) return
+    if (mode === 'vs_player' && socketRef.current && session) {
+      setGameResult({ kind: 'lose', message: 'Hết giờ! Bạn thua lượt này.' })
+      socketRef.current.emit('finish_session', {
+        sessionId: session.id,
+        winner_id: isHost ? session?.guest_id : session?.host_id,
+        winner_side: isHost ? 'guest' : 'host',
+        score_host: isHost ? myScore : oppScore,
+        score_guest: isHost ? oppScore : myScore,
+      })
+      return
+    }
     setGameResult({ kind: 'lose', message: 'Hết giờ! Thử lại ván mới nhé.' })
-    recordResult(GAME_SLUG, 'loss')
+    void recordSoloResult('loss', { winnerSide: 'guest', scoreHost: score, scoreGuest: score + 20 })
   }
   const handleHint = () => {
     const unmatched = cards.filter(c=>!c.matched&&!c.flipped)
@@ -206,10 +256,16 @@ export default function MemoryPage() {
     <div className="flex flex-col h-full">
       <GameHeader gameSlug={GAME_SLUG} gameName="Cờ trí nhớ" score={mode === 'vs_player' ? myScore : score}
         onReset={mode === 'vs_player' ? handleAbandon : reset}
-        timerKey={timerKey} paused={done || !!gameResult}
+        timerKey={timerKey} paused={done || !!gameResult || (mode === 'vs_player' && (waitingOpponent || !myTurn))}
         onTimeout={handleTimeout} help={help}
-        onSave={()=>saveGame(GAME_SLUG,{cards,moves,score,gameResult})}
-        onLoad={()=>{ const s=loadGame(GAME_SLUG); if(s){setCards(s.cards);setFlipped([]);setMoves(s.moves);setScore(s.score);setGameResult(s.gameResult||null);setDone(false);setHintShown([]);setTimerKey(k=>k+1);lockRef.current=false} }} />
+        onSave={()=>saveGameSnapshot({
+          sessionId: soloSessionId,
+          setSessionId: setSoloSessionId,
+          gameSlug: GAME_SLUG,
+          boardSize: ROWS,
+          snapshot: { cards, moves, score, gameResult, done },
+        })}
+        onLoad={async ()=>{ const s=await loadGameSnapshot({ gameSlug: GAME_SLUG, setSessionId: setSoloSessionId }); if(!s) return false; setCards(s.cards || initCards()); setFlipped([]); setMoves(s.moves || 0); setScore(s.score || 0); setGameResult(s.gameResult||null); setDone(Boolean(s.done)); setHintShown([]); setTimerKey(k=>k+1); lockRef.current=false; return true }} />
 
       <div className="flex-1 flex flex-col items-center justify-center gap-5 p-4">
         {waitingOpponent ? (

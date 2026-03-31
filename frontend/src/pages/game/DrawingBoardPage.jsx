@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { Eraser, Trash2, Download, Minus, Plus } from 'lucide-react'
-import GameHeader from '@/components/game/GameSessionHeader'
-import { useGameStore } from '@/store/gameStore'
+import GameToolbar from '@/components/game/GameToolbar'
 import { getGameHelp } from '@/data/gameHelp'
+import { ensureSoloSession, loadGameSnapshot, saveGameSnapshot } from '@/utils/gamePersistence'
 
 const COLORS = ['#0f1117', '#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6', '#ec4899', '#ffffff', '#6b7280']
 
 export default function DrawingBoardPage() {
-  const { saveGame, loadGame } = useGameStore()
   const help = getGameHelp('draw')
   const canvasRef = useRef(null)
   const lastPos = useRef(null)
@@ -15,6 +14,9 @@ export default function DrawingBoardPage() {
   const [color, setColor] = useState('#3b82f6')
   const [size, setSize] = useState(4)
   const [eraser, setEraser] = useState(false)
+  const [soloSessionId, setSoloSessionId] = useState(null)
+  const [timerKey, setTimerKey] = useState(0)
+  const [timeExpired, setTimeExpired] = useState(false)
 
   const clearCanvas = () => {
     const ctx = canvasRef.current.getContext('2d')
@@ -49,6 +51,7 @@ export default function DrawingBoardPage() {
   }
 
   const startDraw = (event) => {
+    if (timeExpired) return
     event.preventDefault()
     setDrawing(true)
     const pos = getPos(event)
@@ -62,7 +65,7 @@ export default function DrawingBoardPage() {
 
   const draw = (event) => {
     event.preventDefault()
-    if (!drawing) return
+    if (!drawing || timeExpired) return
     const pos = getPos(event)
     const ctx = canvasRef.current.getContext('2d')
     ctx.beginPath()
@@ -78,22 +81,40 @@ export default function DrawingBoardPage() {
 
   const endDraw = () => setDrawing(false)
 
-  const handleSave = () => {
-    saveGame('draw', {
-      imageData: canvasRef.current.toDataURL('image/png'),
-      color,
-      size,
-      eraser,
+  const ensureCurrentSoloSession = async () =>
+    ensureSoloSession({
+      sessionId: soloSessionId,
+      setSessionId: setSoloSessionId,
+      gameSlug: 'draw',
+      boardSize: 1,
+    })
+
+  const handleSave = async () => {
+    return saveGameSnapshot({
+      sessionId: await ensureCurrentSoloSession(),
+      setSessionId: setSoloSessionId,
+      gameSlug: 'draw',
+      boardSize: 1,
+      snapshot: {
+        imageData: canvasRef.current.toDataURL('image/png'),
+        color,
+        size,
+        eraser,
+      },
     })
   }
 
-  const handleLoad = () => {
-    const snapshot = loadGame('draw')
-    if (!snapshot) return
+  const handleLoad = async () => {
+    const snapshot = await loadGameSnapshot({ gameSlug: 'draw', setSessionId: setSoloSessionId })
+    if (!snapshot) return false
     restoreCanvas(snapshot.imageData)
     setColor(snapshot.color || '#3b82f6')
     setSize(snapshot.size || 4)
     setEraser(Boolean(snapshot.eraser))
+    setDrawing(false)
+    setTimeExpired(false)
+    setTimerKey((value) => value + 1)
+    return true
   }
 
   const download = () => {
@@ -105,15 +126,24 @@ export default function DrawingBoardPage() {
 
   return (
     <div className="flex flex-col h-full">
-      <GameHeader
+      <GameToolbar
         gameSlug="draw"
-        gameName="Bang ve tu do"
-        onReset={clearCanvas}
+        gameName="Bảng vẽ tự do"
+        onReset={() => {
+          clearCanvas()
+          setDrawing(false)
+          setTimeExpired(false)
+          setSoloSessionId(null)
+          setTimerKey((value) => value + 1)
+        }}
         onSave={handleSave}
         onLoad={handleLoad}
-        timerKey={0}
-        paused
-        showTimer={false}
+        timerKey={timerKey}
+        paused={timeExpired}
+        onTimeout={() => {
+          setDrawing(false)
+          setTimeExpired(true)
+        }}
         help={help}
       />
 
@@ -147,7 +177,7 @@ export default function DrawingBoardPage() {
             <Eraser size={16} />
           </button>
           <button onClick={clearCanvas} className="btn-icon text-red-500"><Trash2 size={16} /></button>
-          <button onClick={download} className="btn-secondary text-xs px-3 py-1.5"><Download size={14} /> Luu anh</button>
+          <button onClick={download} className="btn-secondary text-xs px-3 py-1.5"><Download size={14} /> Lưu ảnh</button>
         </div>
 
         <canvas
@@ -164,7 +194,11 @@ export default function DrawingBoardPage() {
           onTouchMove={draw}
           onTouchEnd={endDraw}
         />
-        <p className="text-xs text-[var(--text-muted)]">Ve tu do bang chuot hoac cam ung. Save/Load se luu lai buc ve hien tai.</p>
+        {timeExpired ? (
+          <p className="text-xs text-amber-500">Hết giờ. Bạn có thể lưu bức vẽ hoặc chơi lại.</p>
+        ) : (
+          <p className="text-xs text-[var(--text-muted)]">Vẽ tự do bằng chuột hoặc cảm ứng. Save/Load sẽ lưu lại bức vẽ hiện tại.</p>
+        )}
       </div>
     </div>
   )

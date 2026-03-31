@@ -1,5 +1,6 @@
 const db = require('../config/db')
 const { checkAndUnlock } = require('./achievementController');
+const { applySessionOutcome, buildOutcome } = require('../utils/sessionOutcome');
 
 // POST /api/sessions
 // tạo phòng
@@ -49,7 +50,20 @@ const joinSession = async (req, res, next) => {
         if (session.host_id === req.user.id)
             return res.status(400).json({ message: 'Bạn đang là chủ phòng' });
 
-        await db('game_sessions') 
+        const outcome = await applySessionOutcome({
+            db,
+            session,
+            payload: { winner_id, winner_side, score_host, score_guest },
+            onUnlock: checkAndUnlock,
+        });
+
+        return res.json({
+            message: 'Game Ä‘Ã£ káº¿t thÃºc!',
+            winner_id: outcome.winnerId,
+            winner_side: outcome.winnerSide,
+        });
+
+        await db('game_sessions')
             .where({ id: req.params.id })
             .update({
                 guest_id: req.user.id,
@@ -153,7 +167,7 @@ const updateBoard = async (req, res, next) => {
 // end game and update ranking
 const finishSession = async (req, res, next) => {
     try {
-        const { winner_id, score_host = 0, score_guest = 0 } = req.body;
+        const { winner_id, winner_side, score_host = 0, score_guest = 0 } = req.body;
         const session = await db('game_sessions')
             .where({ id: req.params.id })
             .first();
@@ -381,6 +395,7 @@ const getSessionScores = async (req, res, next) => {
             game: { id: session.game_id, name: session.game_name },
             status: session.status,
             winner_id: session.winner_id,
+            winner_side: buildOutcome(session, { winner_id: session.winner_id }).winnerSide,
             started_at: session.started_at,
             finished_at: session.finished_at,
             players: {
@@ -404,8 +419,71 @@ const getSessionScores = async (req, res, next) => {
         next(err);
     }
 };
+
+const joinSessionFixed = async (req, res, next) => {
+    try {
+        const session = await db('game_sessions')
+            .where({ id: req.params.id })
+            .first()
+
+        if (!session)
+            return res.status(404).json({ message: 'KhÃ´ng tÃ¬m tháº¥y phÃ²ng' });
+        if (session.status !== 'waiting')
+            return res.status(400).json({ message: 'PhÃ²ng Ä‘Ã£ báº¯t Ä‘áº§u' });
+        if (session.host_id === req.user.id)
+            return res.status(400).json({ message: 'Báº¡n Ä‘ang lÃ  chá»§ phÃ²ng' });
+
+        await db('game_sessions')
+            .where({ id: req.params.id })
+            .update({
+                guest_id: req.user.id,
+                status: 'playing',
+                started_at: db.fn.now()
+            });
+
+        const updated = await db('game_sessions')
+            .where({ id: req.params.id })
+            .first();
+
+        return res.status(200).json({ message: 'Báº¡n Ä‘Ã£ vÃ o phÃ²ng thÃ nh cÃ´ng', session: updated });
+    } catch (err) {
+        next(err);
+    }
+};
+
+const finishSessionFixed = async (req, res, next) => {
+    try {
+        const { winner_id, winner_side, score_host = 0, score_guest = 0 } = req.body;
+        const session = await db('game_sessions')
+            .where({ id: req.params.id })
+            .first();
+
+        if (!session)
+            return res.status(404).json({ message: 'PhÃ²ng khÃ´ng tá»“n táº¡i' });
+        if (session.status !== 'playing')
+            return res.status(400).json({ message: 'PhÃ²ng khÃ´ng á»Ÿ tráº¡ng thÃ¡i chÆ¡i' });
+        if (session.host_id !== req.user.id && session.guest_id !== req.user.id) {
+            return res.status(403).json({ message: 'Báº¡n khÃ´ng cÃ³ quyá»n káº¿t thÃºc phÃ²ng' });
+        }
+
+        const outcome = await applySessionOutcome({
+            db,
+            session,
+            payload: { winner_id, winner_side, score_host, score_guest },
+            onUnlock: checkAndUnlock,
+        });
+
+        return res.json({
+            message: 'Game Ä‘Ã£ káº¿t thÃºc!',
+            winner_id: outcome.winnerId,
+            winner_side: outcome.winnerSide,
+        });
+    } catch (err) {
+        next(err);
+    }
+};
  
 module.exports = {
-  createSession, joinSession, getWaitingSession, getSession, getSessionScores,
-  updateBoard, finishSession, saveSession, getSave, abandonSession, getHistory,
+  createSession, joinSession: joinSessionFixed, getWaitingSession, getSession, getSessionScores,
+  updateBoard, finishSession: finishSessionFixed, saveSession, getSave, abandonSession, getHistory,
 };

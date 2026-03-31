@@ -2,14 +2,17 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { io } from 'socket.io-client'
 import GameBoard from '@/components/game/GameBoard'
-import GameHeader from '@/components/game/GameSessionHeader'
+import GameToolbar from '@/components/game/GameToolbar'
 import GameResult from '@/components/game/GameResult'
 import MultiplayerLobby from '@/components/game/MultiplayerLobby'
 import { useGameStore } from '@/store/gameStore'
 import { useAuthStore } from '@/store/authStore'
 import { checkWin, aiMove } from '@/utils/caroLogic'
 import { getGameHelp } from '@/data/gameHelp'
+import { ensureSoloSession, loadGameSnapshot, recordSoloGameResult, saveGameSnapshot } from '@/utils/gamePersistence'
 import toast from 'react-hot-toast'
+
+const GameHeader = GameToolbar
 
 const ROWS = 12, COLS = 12, WIN = 4
 const GAME_SLUG = 'caro4'
@@ -20,7 +23,7 @@ function initBoard() {
 
 export default function CaroFourPage() {
   const [searchParams] = useSearchParams()
-  const { saveGame, loadGame, recordResult } = useGameStore()
+  const { recordResult } = useGameStore()
   const { token, user } = useAuthStore()
   const help = getGameHelp('caro4')
 
@@ -30,20 +33,43 @@ export default function CaroFourPage() {
   const [waitingOpponent, setWaitingOpponent] = useState(false)
   const socketRef = useRef(null)
 
-  const initState = () => {
-    if (searchParams.get('load') === 'true') {
-      const saved = loadGame(GAME_SLUG)
-      if (saved) return saved
-    }
-    return { board: initBoard(), current: 'X', winner: null, winLine: [], score: 0 }
-  }
+  const initState = () => ({ board: initBoard(), current: 'X', winner: null, winLine: [], score: 0 })
 
   const [state, setState] = useState(initState)
   const [cursor, setCursor] = useState({ row: 5, col: 5 })
   const [hintCell, setHintCell] = useState(null)
   const [timerKey, setTimerKey] = useState(0)
+  const [soloSessionId, setSoloSessionId] = useState(null)
   const resultHandled = useRef(false)
   const { board, current, winner, winLine, score } = state
+
+  const ensureCurrentSoloSession = useCallback(
+    () => ensureSoloSession({
+      sessionId: soloSessionId,
+      setSessionId: setSoloSessionId,
+      gameSlug: GAME_SLUG,
+      boardSize: ROWS,
+    }),
+    [soloSessionId]
+  )
+
+  const recordSoloResult = useCallback(
+    async (resultKind, options = {}) => {
+      await recordSoloGameResult({
+        ensureSession: ensureCurrentSoloSession,
+        setSessionId: setSoloSessionId,
+        recordResult,
+        gameSlug: GAME_SLUG,
+        userId: user?.id,
+        result: resultKind,
+        winnerSide: options.winnerSide,
+        scoreHost: options.scoreHost,
+        scoreGuest: options.scoreGuest,
+        winnerId: options.winnerId,
+      })
+    },
+    [ensureCurrentSoloSession, recordResult, user?.id]
+  )
 
   useEffect(() => {
     if (mode !== 'vs_player' || !session) return
@@ -52,10 +78,11 @@ export default function CaroFourPage() {
     socket.emit('join_session', { sessionId: session.id })
     socket.on('opponent_moved', ({ board_state }) => {
       setState(prev => ({ ...prev, board: board_state, current: mySymbol }))
-      setTimerKey(k => k + 1)
+      setTimerKey((k) => k + 1)
     })
-    socket.on('session_finished', ({ winner_id }) => {
-      setState(prev => ({ ...prev, winner: winner_id === user.id ? mySymbol : (mySymbol === 'X' ? 'O' : 'X') }))
+    socket.on('session_finished', ({ winner_id, winner_side }) => {
+      const nextWinner = winner_side === 'draw' ? null : winner_id === user.id ? mySymbol : (mySymbol === 'X' ? 'O' : 'X')
+      setState(prev => ({ ...prev, winner: nextWinner }))
     })
     socket.on('session_abandoned', ({ abandoned_by }) => {
       if (abandoned_by !== user.id) {
@@ -77,6 +104,7 @@ export default function CaroFourPage() {
           setWaitingOpponent(false)
           setSession(res.data)
           setState({ board: initBoard(), current: 'X', winner: null, winLine: [], score: 0 })
+          setTimerKey((k) => k + 1)
           toast.success('Đối thủ đã vào phòng!')
           clearInterval(interval)
         }
@@ -96,14 +124,14 @@ export default function CaroFourPage() {
     const next = current === 'X' ? 'O' : 'X'
     const newState = { board: nb, current: won ? current : next, winner: won ? current : null, winLine: line, score: score + (won ? 80 : 0) }
     setState(newState)
-    setTimerKey(k => k + 1)
     setHintCell(null)
+    if (mode === 'vs_player') setTimerKey((k) => k + 1)
 
     if (mode === 'vs_player' && socketRef.current) {
       socketRef.current.emit('move', { sessionId: session.id, board_state: nb, move_history: [] })
       if (won) {
         socketRef.current.emit('finish_session', {
-          sessionId: session.id, winner_id: user.id,
+          sessionId: session.id, winner_id: current === 'X' ? (session?.host_id ?? user.id) : (session?.guest_id ?? user.id), winner_side: current === 'X' ? 'host' : 'guest',
           score_host: current === 'X' ? score + 80 : 0,
           score_guest: current === 'O' ? score + 80 : 0,
         })
@@ -112,7 +140,14 @@ export default function CaroFourPage() {
 
     if (won && !resultHandled.current) {
       resultHandled.current = true
-      if (mode !== 'vs_player') recordResult(GAME_SLUG, current === 'X' ? 'win' : 'loss')
+      if (mode !== 'vs_player') {
+        void recordSoloResult(current === 'X' ? 'win' : 'loss', {
+          winnerSide: current === 'X' ? 'host' : 'guest',
+          scoreHost: current === 'X' ? score + 80 : score,
+          scoreGuest: current === 'O' ? 80 : 0,
+          winnerId: current === 'X' ? user?.id : null,
+        })
+      }
     }
 
     if (!won && next === 'O' && mode === 'vs_computer') {
@@ -123,23 +158,47 @@ export default function CaroFourPage() {
           const nb2 = prev.board.map(r2 => [...r2])
           nb2[ar][ac] = 'O'
           const { won: aw, line: al } = checkWin(nb2, ar, ac, 'O', WIN)
-          if (aw && !resultHandled.current) { resultHandled.current = true; recordResult(GAME_SLUG, 'loss') }
+          if (aw && !resultHandled.current) {
+            resultHandled.current = true
+            void recordSoloResult('loss', {
+              winnerSide: 'guest',
+              scoreHost: score,
+              scoreGuest: 80,
+            })
+          }
           return { ...prev, board: nb2, current: 'X', winner: aw ? 'O' : null, winLine: al }
         })
-        setTimerKey(k => k + 1)
       }, 300)
     }
-  }, [board, current, winner, score, mode, mySymbol, session])
+  }, [board, current, winner, score, mode, mySymbol, session, recordSoloResult, user?.id])
 
   const handleEnter = (t) => { if (t?.row != null) { setCursor(t); place(t.row, t.col) } else place(cursor.row, cursor.col) }
   const move = (dr, dc) => setCursor(p => ({ row: Math.max(0, Math.min(ROWS - 1, p.row + dr)), col: Math.max(0, Math.min(COLS - 1, p.col + dc)) }))
-  const reset = () => { setState({ board: initBoard(), current: 'X', winner: null, winLine: [], score: 0 }); setCursor({ row: 5, col: 5 }); setHintCell(null); resultHandled.current = false; setTimerKey(k => k + 1) }
+  const reset = () => { setState({ board: initBoard(), current: 'X', winner: null, winLine: [], score: 0 }); setCursor({ row: 5, col: 5 }); setHintCell(null); resultHandled.current = false; setSoloSessionId(null); setTimerKey(k => k + 1) }
   const handleTimeout = () => {
     setState(prev => {
       if (prev.winner || resultHandled.current) return prev
       const nextWinner = prev.current === 'X' ? 'O' : 'X'
       resultHandled.current = true
-      setTimeout(() => recordResult(GAME_SLUG, nextWinner === 'X' ? 'win' : 'loss'), 0)
+      setTimeout(() => {
+        if (mode === 'vs_player' && socketRef.current && session) {
+          socketRef.current.emit('finish_session', {
+            sessionId: session.id,
+            winner_id: nextWinner === 'X' ? session?.host_id : session?.guest_id,
+            winner_side: nextWinner === 'X' ? 'host' : 'guest',
+            score_host: nextWinner === 'X' ? prev.score + 80 : prev.score,
+            score_guest: nextWinner === 'O' ? 80 : 0,
+          })
+          return
+        }
+
+        void recordSoloResult(nextWinner === 'X' ? 'win' : 'loss', {
+          winnerSide: nextWinner === 'X' ? 'host' : 'guest',
+          scoreHost: nextWinner === 'X' ? prev.score + 80 : prev.score,
+          scoreGuest: nextWinner === 'O' ? 80 : 0,
+          winnerId: nextWinner === 'X' ? user?.id : null,
+        })
+      }, 0)
       return { ...prev, current: nextWinner, winner: nextWinner, winLine: [], score: nextWinner === 'X' ? prev.score + 80 : prev.score }
     })
   }
@@ -194,9 +253,23 @@ export default function CaroFourPage() {
     <div className="flex flex-col h-full">
       <GameHeader gameSlug={GAME_SLUG} gameName="Caro 4 trong 1 hàng" score={score}
         onReset={mode === 'vs_player' ? handleAbandon : reset}
-        timerKey={timerKey} paused={!!winner || (mode === 'vs_player' && waitingOpponent)}
+        timerKey={timerKey} paused={!!winner || (mode === 'vs_player' && (waitingOpponent || !isMyTurn))}
         onTimeout={handleTimeout} help={help}
-        onSave={() => saveGame(GAME_SLUG, state)} onLoad={() => { const s = loadGame(GAME_SLUG); if (s) setState(s) }} />
+        onSave={() => saveGameSnapshot({
+          sessionId: soloSessionId,
+          setSessionId: setSoloSessionId,
+          gameSlug: GAME_SLUG,
+          boardSize: ROWS,
+          snapshot: state,
+        })} onLoad={async () => {
+          const snapshot = await loadGameSnapshot({ gameSlug: GAME_SLUG, setSessionId: setSoloSessionId })
+          if (!snapshot) return false
+          setState(snapshot)
+          setHintCell(null)
+          resultHandled.current = Boolean(snapshot?.winner)
+          setTimerKey(k => k + 1)
+          return true
+        }} />
       <div className="flex-1 flex flex-col items-center justify-center gap-4 p-4 overflow-auto">
         {waitingOpponent ? (
           <div className="text-center space-y-3">

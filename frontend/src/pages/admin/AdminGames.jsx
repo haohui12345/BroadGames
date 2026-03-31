@@ -96,7 +96,7 @@ export default function AdminGames() {
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Quản lý Game</h1>
+          <h1 className="text-2xl font-bold">Quản lý game</h1>
           <p className="text-sm text-[var(--text-muted)] mt-0.5">
             {enabledCount}/{games.length} game đang bật
           </p>
@@ -200,7 +200,7 @@ export default function AdminGames() {
                 <button
                   onClick={() => handleToggleClick(g)}
                   disabled={toggling === g.id || bulkLoading}
-                  title={g.enabled ? 'Nhấn để TẮT game' : 'Nhấn để BẬT game'}
+                  title={g.enabled ? 'Nhấn để tắt game' : 'Nhấn để bật game'}
                   className="disabled:opacity-50 transition-all"
                 >
                   {toggling === g.id ? (

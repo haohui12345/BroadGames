@@ -2,29 +2,45 @@ import api from '@/utils/api'
 
 // Cache game list để tránh gọi lại nhiều lần
 let _gamesCache = null
+let _gamesCacheExpiresAt = 0
 
-const getGamesRaw = async () => {
-  if (_gamesCache) return _gamesCache
+function mapGame(game) {
+  return {
+    id: game.id,
+    slug: game.code,
+    name: game.name,
+    description: game.description,
+    enabled: game.is_enabled,
+    board_size: game.board_size,
+    emoji: getEmoji(game.code),
+  }
+}
+
+const getGamesRaw = async ({ force = false } = {}) => {
+  const now = Date.now()
+  if (!force && _gamesCache && now < _gamesCacheExpiresAt) return _gamesCache
   const res = await api.get('/games')
   _gamesCache = res.data.games || []
-  setTimeout(() => { _gamesCache = null }, 30000)
+  _gamesCacheExpiresAt = now + 30000
   return _gamesCache
 }
 
 const gameService = {
-  getGames: async () => {
-    const games = await getGamesRaw()
-    return {
-      data: games.map(g => ({
-        id: g.id,
-        slug: g.code,
-        name: g.name,
-        description: g.description,
-        enabled: g.is_enabled,
-        board_size: g.board_size,
-        emoji: getEmoji(g.code),
-      }))
-    }
+  clearGamesCache: () => {
+    _gamesCache = null
+    _gamesCacheExpiresAt = 0
+  },
+
+  getGames: async ({ onlyEnabled = false, force = false } = {}) => {
+    const games = await getGamesRaw({ force })
+    const mapped = games.map(mapGame)
+    return { data: onlyEnabled ? mapped.filter((game) => game.enabled) : mapped }
+  },
+
+  getGameBySlug: async (slug, { force = false } = {}) => {
+    const games = await getGamesRaw({ force })
+    const game = games.find((item) => item.code === slug)
+    return { data: game ? mapGame(game) : null }
   },
 
   getGameIdBySlug: async (slug) => {
@@ -48,24 +64,27 @@ const gameService = {
   },
 
   // Tạo session khi bắt đầu game vs máy
-  createSession: async ({ game_slug, vs_computer = true }) => {
+  createSession: async ({ game_slug, vs_computer = true, board_size }) => {
     const games = await getGamesRaw()
     const game = games.find(g => g.code === game_slug)
     if (!game) return { data: null }
     const res = await api.post('/sessions', {
       game_id: game.id,
       vs_computer,
-      board_size: game.board_size,
+      board_size: board_size || game.board_size,
     })
     return { data: res.data.sessions }
   },
 
   // Kết thúc session → cập nhật ranking
-  finishSession: async ({ session_id, winner_id, score_host = 0, score_guest = 0 }) => {
+  finishSession: async ({ session_id, winner_id, winner_side, score_host = 0, score_guest = 0 }) => {
     if (!session_id) return { data: null }
     try {
       const res = await api.post(`/sessions/${session_id}/finish`, {
-        winner_id, score_host, score_guest,
+        winner_id,
+        winner_side,
+        score_host,
+        score_guest,
       })
       return { data: res.data }
     } catch {
@@ -74,13 +93,13 @@ const gameService = {
   },
 
   // Save game state vào BE
-  saveGame: async ({ session_id, game_slug, state }) => {
+  saveGame: async ({ session_id, game_slug, state, move_history }) => {
     if (!session_id) return { data: null }
     try {
       const res = await api.post(`/sessions/${session_id}/save`, {
-        save_name: `${game_slug} - ${new Date().toLocaleString('vi')}`,
-        board_state: state?.board || [],
-        move_history: state?.moveHistory || [],
+        save_name: `${game_slug} - ${new Date().toLocaleString('vi-VN')}`,
+        board_state: state,
+        move_history: move_history || state?.moveHistory || state?.move_history || [],
       })
       return { data: res.data }
     } catch {
@@ -93,7 +112,14 @@ const gameService = {
     try {
       const res = await api.get('/sessions/saves')
       const saves = res.data.saves || []
-      return { data: saves.find(s => s.game_code === slug) || null }
+      const save = saves.find(s => s.game_code === slug) || null
+      if (!save) return { data: null }
+      return {
+        data: {
+          ...save,
+          state: save.board_state || null,
+        },
+      }
     } catch {
       return { data: null }
     }

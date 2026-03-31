@@ -1,5 +1,7 @@
 const jwt = require('jsonwebtoken');
 const db = require('./config/db');
+const { checkAndUnlock } = require('./controllers/achievementController');
+const { applySessionOutcome } = require('./utils/sessionOutcome');
 
 /**
  * Mỗi session có 1 room riêng: `session:<session_id>`
@@ -73,13 +75,28 @@ module.exports = (io) => {
     });
 
     // Kết thúc trận
-    socket.on('finish_session', async ({ sessionId, winner_id, score_host = 0, score_guest = 0 }) => {
+    socket.on('finish_session', async ({ sessionId, winner_id, winner_side, score_host = 0, score_guest = 0 }) => {
       try {
         const session = await db('game_sessions').where({ id: sessionId }).first();
         if (!session || session.status !== 'playing')
           return socket.emit('error', { message: 'Phòng không hợp lệ' });
         if (session.host_id !== userId && session.guest_id !== userId)
           return socket.emit('error', { message: 'Bạn không thuộc phòng này' });
+
+        const outcome = await applySessionOutcome({
+          db,
+          session,
+          payload: { winner_id, winner_side, score_host, score_guest },
+          onUnlock: checkAndUnlock,
+        });
+
+        io.to(`session:${sessionId}`).emit('session_finished', {
+          winner_id: outcome.winnerId,
+          winner_side: outcome.winnerSide,
+          score_host: outcome.scoreHost,
+          score_guest: outcome.scoreGuest,
+        });
+        return;
 
         await db('game_sessions').where({ id: sessionId }).update({
           status: 'finished',

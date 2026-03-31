@@ -100,7 +100,7 @@ export default function MessagesCenterPage() {
       }
       setContent('')
     } catch (error) {
-      toast.error(error.message || 'Khong gui duoc tin nhan')
+      toast.error(error.message || 'Không gửi được tin nhắn')
     } finally {
       setSending(false)
     }
@@ -111,14 +111,14 @@ export default function MessagesCenterPage() {
       <div className="grid grid-cols-12 gap-4 h-[calc(100vh-3rem)]">
         <div className="col-span-4 card overflow-hidden flex flex-col">
           <div className="p-4 border-b border-[var(--border)]">
-            <h1 className="text-2xl font-bold">Tin nhan</h1>
+            <h1 className="text-2xl font-bold">Tin nhắn</h1>
           </div>
 
           <div className="flex-1 overflow-y-auto">
             {loading ? (
-              <div className="p-4 text-[var(--text-muted)]">Dang tai...</div>
+              <div className="p-4 text-[var(--text-muted)]">Đang tải...</div>
             ) : friends.length === 0 ? (
-              <div className="p-4 text-[var(--text-muted)]">Chua co ban be de nhan tin</div>
+              <div className="p-4 text-[var(--text-muted)]">Chưa có bạn bè để nhắn tin</div>
             ) : (
               friends.map((friend) => (
                 <button
@@ -139,7 +139,7 @@ export default function MessagesCenterPage() {
         <div className="col-span-8 card overflow-hidden flex flex-col">
           <div className="p-4 border-b border-[var(--border)]">
             <h2 className="text-2xl font-bold">
-              {selectedFriend ? selectedFriend.display_name : 'Chon cuoc tro chuyen'}
+              {selectedFriend ? selectedFriend.display_name : 'Chọn cuộc trò chuyện'}
             </h2>
             {selectedFriend ? (
               <p className="text-sm text-[var(--text-muted)] mt-1">@{selectedFriend.username}</p>
@@ -148,9 +148,9 @@ export default function MessagesCenterPage() {
 
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {!selectedFriend ? (
-              <div className="text-[var(--text-muted)]">Hay chon mot nguoi ban de bat dau nhan tin.</div>
+              <div className="text-[var(--text-muted)]">Hãy chọn một người bạn để bắt đầu nhắn tin.</div>
             ) : messages.length === 0 ? (
-              <div className="text-[var(--text-muted)]">Chua co tin nhan nao.</div>
+              <div className="text-[var(--text-muted)]">Chưa có tin nhắn nào.</div>
             ) : (
               messages.map((message) => {
                 const myId = user?.id
@@ -169,7 +169,7 @@ export default function MessagesCenterPage() {
                       }`}
                     >
                       <div className="text-sm font-medium mb-1">
-                        {isMine ? 'Ban' : selectedFriend?.display_name || 'Nguoi dung'}
+                        {isMine ? 'Bạn' : selectedFriend?.display_name || 'Người dùng'}
                       </div>
                       <div>{message.content}</div>
                       <div className={`text-[11px] mt-1 ${isMine ? 'text-white/70' : 'text-[var(--text-muted)]'}`}>
@@ -187,7 +187,7 @@ export default function MessagesCenterPage() {
               type="text"
               value={content}
               onChange={(event) => setContent(event.target.value)}
-              placeholder={selectedFriend ? 'Nhap tin nhan...' : 'Chon ban be truoc khi nhan'}
+              placeholder={selectedFriend ? 'Nhập tin nhắn...' : 'Chọn bạn bè trước khi nhắn'}
               disabled={!selectedFriend || sending}
               className="input flex-1"
             />
@@ -196,7 +196,7 @@ export default function MessagesCenterPage() {
               disabled={!selectedFriend || !content.trim() || sending}
               className="btn-primary"
             >
-              {sending ? 'Dang gui...' : 'Gui'}
+              {sending ? 'Đang gửi...' : 'Gửi'}
             </button>
           </form>
         </div>
