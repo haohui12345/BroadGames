@@ -256,7 +256,9 @@ export default function MemoryPage() {
     <div className="flex flex-col h-full">
       <GameHeader gameSlug={GAME_SLUG} gameName="Cờ trí nhớ" score={mode === 'vs_player' ? myScore : score}
         onReset={mode === 'vs_player' ? handleAbandon : reset}
-        timerKey={timerKey} paused={done || !!gameResult || (mode === 'vs_player' && (waitingOpponent || !myTurn))}
+        timerKey={timerKey}
+        paused={done || !!gameResult || (mode === 'vs_player' && waitingOpponent)}
+        timeoutEnabled={mode !== 'vs_player' || myTurn}
         onTimeout={handleTimeout} help={help}
         onSave={()=>saveGameSnapshot({
           sessionId: soloSessionId,

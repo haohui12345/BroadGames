@@ -349,7 +349,9 @@ export default function CaroFivePage() {
       <GameToolbar
         gameSlug={GAME_SLUG} gameName="Caro 5 trong 1 hàng"
         score={score} onReset={mode === 'vs_player' ? handleAbandon : reset}
-        timerKey={timerKey} paused={!!winner || (mode === 'vs_player' && (waitingOpponent || !isMyTurn))}
+        timerKey={timerKey}
+        paused={!!winner || (mode === 'vs_player' && waitingOpponent)}
+        timeoutEnabled={mode !== 'vs_player' || isMyTurn}
         onTimeout={handleTimeout}
         onSave={() => saveGameSnapshot({
           sessionId: soloSessionId,

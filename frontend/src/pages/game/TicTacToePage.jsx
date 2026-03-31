@@ -278,7 +278,9 @@ export default function TicTacToePage() {
     <div className="flex flex-col h-full">
       <GameToolbar gameSlug={GAME_SLUG} gameName="Tic-tac-toe" score={score}
         onReset={mode === 'vs_player' ? handleAbandon : reset}
-        timerKey={timerKey} paused={!!result || (mode === 'vs_player' && (waitingOpponent || !isMyTurn))}
+        timerKey={timerKey}
+        paused={!!result || (mode === 'vs_player' && waitingOpponent)}
+        timeoutEnabled={mode !== 'vs_player' || isMyTurn}
         onTimeout={handleTimeout} help={help}
         onSave={() => saveGameSnapshot({
           sessionId: soloSessionId,

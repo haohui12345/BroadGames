@@ -20,16 +20,7 @@ export default function RankingPage() {
   useEffect(() => {
     userService
       .getRanking({ type, gameSlug, page: 1 })
-      .then((r) => {
-        const raw = r.data || []
-        const seen = new Set()
-        const unique = raw.filter(item => {
-          if (!item.user_id || seen.has(item.user_id)) return false
-          seen.add(item.user_id)
-          return true
-        })
-        setRanking(unique)
-      })
+      .then((r) => setRanking(r.data || []))
       .catch(() => setRanking([]))
   }, [type, gameSlug])
 
@@ -63,6 +54,7 @@ export default function RankingPage() {
             <div className="flex-1">
               <div className="font-medium">{item.display_name}</div>
               <div className="text-xs text-[var(--text-muted)]">@{item.username || 'nguoi-dung'}</div>
+              {item.game_name ? <div className="text-xs text-[var(--text-muted)]">{item.game_name}</div> : null}
             </div>
             <div className="font-bold">{item.score ?? item.wins ?? 0}</div>
           </div>

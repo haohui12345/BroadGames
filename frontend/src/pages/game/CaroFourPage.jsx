@@ -253,7 +253,9 @@ export default function CaroFourPage() {
     <div className="flex flex-col h-full">
       <GameHeader gameSlug={GAME_SLUG} gameName="Caro 4 trong 1 hàng" score={score}
         onReset={mode === 'vs_player' ? handleAbandon : reset}
-        timerKey={timerKey} paused={!!winner || (mode === 'vs_player' && (waitingOpponent || !isMyTurn))}
+        timerKey={timerKey}
+        paused={!!winner || (mode === 'vs_player' && waitingOpponent)}
+        timeoutEnabled={mode !== 'vs_player' || isMyTurn}
         onTimeout={handleTimeout} help={help}
         onSave={() => saveGameSnapshot({
           sessionId: soloSessionId,
