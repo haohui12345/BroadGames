@@ -75,43 +75,26 @@ const getRankings = async (req, res, next) => {
         const numLimit = Math.min(Number(limit), 50);
         const offset = (Number(page) - 1) * numLimit;
 
-        let query;
+        let query = db('rankings as r')
+            .join('users as u', 'r.user_id', 'u.id')
+            .join('games as g', 'r.game_id', 'g.id')
+            .where('u.is_active', true)
+            .select(
+                'u.id as user_id', 'u.username', 'u.full_name', 'u.avatar_url',
+                'g.id as game_id', 'g.name as game_name', 'g.code as game_code',
+                'r.wins', 'r.losses', 'r.draws', 'r.total_score',
+                db.raw(`ROW_NUMBER() OVER (ORDER BY r.total_score DESC) as rank`),
+                db.raw(`CASE WHEN u.id = ? THEN true ELSE false END as is_me`, [req.user.id])
+            )
+            .orderBy('r.total_score', 'desc')
+            .limit(numLimit)
+            .offset(offset);
 
         if (game_slug) {
-            query = db('rankings as r')
-                .join('users as u', 'r.user_id', 'u.id')
-                .join('games as g', 'r.game_id', 'g.id')
-                .where('u.is_active', true)
-                .where('g.code', game_slug)
-                .select(
-                    'u.id as user_id', 'u.username', 'u.full_name', 'u.avatar_url',
-                    'g.id as game_id', 'g.name as game_name', 'g.code as game_code',
-                    'r.wins', 'r.losses', 'r.draws', 'r.total_score',
-                    db.raw(`ROW_NUMBER() OVER (ORDER BY r.total_score DESC) as rank`),
-                    db.raw(`CASE WHEN u.id = ? THEN true ELSE false END as is_me`, [req.user.id])
-                )
-                .orderBy('r.total_score', 'desc');
-        } else {
-            query = db('rankings as r')
-                .join('users as u', 'r.user_id', 'u.id')
-                .where('u.is_active', true)
-                .groupBy('u.id', 'u.username', 'u.full_name', 'u.avatar_url')
-                .select(
-                    'u.id as user_id', 'u.username', 'u.full_name', 'u.avatar_url',
-                    db.raw('NULL::integer as game_id'),
-                    db.raw('NULL::text as game_name'),
-                    db.raw('NULL::text as game_code'),
-                    db.raw('COALESCE(SUM(r.wins), 0) as wins'),
-                    db.raw('COALESCE(SUM(r.losses), 0) as losses'),
-                    db.raw('COALESCE(SUM(r.draws), 0) as draws'),
-                    db.raw('COALESCE(SUM(r.total_score), 0) as total_score'),
-                    db.raw(`ROW_NUMBER() OVER (ORDER BY COALESCE(SUM(r.total_score), 0) DESC) as rank`),
-                    db.raw(`CASE WHEN u.id = ? THEN true ELSE false END as is_me`, [req.user.id])
-                )
-                .orderByRaw('COALESCE(SUM(r.total_score), 0) DESC');
+            query = query.where('g.code', game_slug);
         }
 
-        const rankings = await query.limit(numLimit).offset(offset);
+        const rankings = await query;
         return res.json({ rankings });
     } catch(err) {
         next(err);
@@ -136,59 +119,26 @@ const getFriendRankings = async (req, res, next) => {
 
     const ids = [req.user.id, ...friendIds.map(f => f.friend_id)];
 
-    let query;
+    let query = db('rankings as r')
+      .join('users as u', 'r.user_id', 'u.id')
+      .join('games as g', 'r.game_id', 'g.id')
+      .whereIn('r.user_id', ids)
+      .where('u.is_active', true)
+      .select(
+        'u.id as user_id', 'u.username', 'u.full_name', 'u.avatar_url',
+        'g.id as game_id', 'g.name as game_name', 'g.code as game_code',
+        'r.wins', 'r.losses', 'r.draws', 'r.total_score',
+        db.raw(`ROW_NUMBER() OVER (ORDER BY r.total_score DESC) as rank`),
+        db.raw(`CASE WHEN u.id = ? THEN true ELSE false END as is_me`, [req.user.id])
+      )
+      .orderBy('r.total_score', 'desc')
+      .limit(limit)
+      .offset(offset);
 
-    if (game_slug) {
-      query = db('rankings as r')
-        .join('users as u', 'r.user_id', 'u.id')
-        .join('games as g', 'r.game_id', 'g.id')
-        .whereIn('r.user_id', ids)
-        .where('u.is_active', true)
-        .where('g.code', game_slug)
-        .select(
-          'u.id as user_id', 'u.username', 'u.full_name', 'u.avatar_url',
-          'g.id as game_id', 'g.name as game_name', 'g.code as game_code',
-          'r.wins', 'r.losses', 'r.draws', 'r.total_score',
-          db.raw(`ROW_NUMBER() OVER (ORDER BY r.total_score DESC) as rank`),
-          db.raw(`CASE WHEN u.id = ? THEN true ELSE false END as is_me`, [req.user.id])
-        )
-        .orderBy('r.total_score', 'desc');
-    } else {
-      query = db('rankings as r')
-        .join('users as u', 'r.user_id', 'u.id')
-        .whereIn('r.user_id', ids)
-        .where('u.is_active', true)
-        .groupBy('u.id', 'u.username', 'u.full_name', 'u.avatar_url')
-        .select(
-          'u.id as user_id', 'u.username', 'u.full_name', 'u.avatar_url',
-          db.raw('NULL::integer as game_id'),
-          db.raw('NULL::text as game_name'),
-          db.raw('NULL::text as game_code'),
-          db.raw('COALESCE(SUM(r.wins), 0) as wins'),
-          db.raw('COALESCE(SUM(r.losses), 0) as losses'),
-          db.raw('COALESCE(SUM(r.draws), 0) as draws'),
-          db.raw('COALESCE(SUM(r.total_score), 0) as total_score'),
-          db.raw(`ROW_NUMBER() OVER (ORDER BY COALESCE(SUM(r.total_score), 0) DESC) as rank`),
-          db.raw(`CASE WHEN u.id = ? THEN true ELSE false END as is_me`, [req.user.id])
-        )
-        .orderByRaw('COALESCE(SUM(r.total_score), 0) DESC');
-    }
+    if (game_slug) query = query.where('g.code', game_slug);
 
-    const rankings = await query.limit(limit).offset(offset);
-    const countQuery = game_slug
-      ? db('rankings as r')
-          .join('users as u', 'r.user_id', 'u.id')
-          .join('games as g', 'r.game_id', 'g.id')
-          .whereIn('r.user_id', ids)
-          .where('u.is_active', true)
-          .where('g.code', game_slug)
-          .count('* as count')
-      : db('rankings as r')
-          .join('users as u', 'r.user_id', 'u.id')
-          .whereIn('r.user_id', ids)
-          .where('u.is_active', true)
-          .countDistinct('r.user_id as count');
-    const [{ count }] = await countQuery;
+    const rankings = await query;
+    const [{ count }] = await db('rankings as r').whereIn('r.user_id', ids).count('* as count');
 
     return res.json({ rankings, pagination: { page: Number(page), page_size: limit, total: Number(count) } });
   } catch (err) {

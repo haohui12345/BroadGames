@@ -94,7 +94,8 @@ const userService = {
   getRanking: async ({ gameSlug, type, page = 1 } = {}) => {
     if (type === 'friends') {
       const res = await api.get('/users/rankings/friends', { params: { page, game_slug: gameSlug } })
-      return { data: (res.data.rankings || []).map(mapRanking) }
+      const rankings = (res.data.rankings || []).map(mapRanking)
+      return { data: !gameSlug ? aggregateRankings(rankings) : rankings }
     }
     if (type === 'personal') {
       const res = await api.get('/users/rankings/me', { params: { page } })
@@ -104,7 +105,8 @@ const userService = {
     const params = { page }
     if (gameSlug) params.game_slug = gameSlug
     const res = await api.get('/users/rankings', { params })
-    return { data: (res.data.rankings || []).map(mapRanking) }
+    const rankings = (res.data.rankings || []).map(mapRanking)
+    return { data: !gameSlug ? aggregateRankings(rankings) : rankings }
   },
 }
 
@@ -127,6 +129,31 @@ function mapRanking(r) {
     game_name: r.game_name,
     is_me: r.is_me,
   }
+}
+
+function aggregateRankings(rankings) {
+  const byUser = new Map()
+
+  for (const item of rankings) {
+    if (!item.user_id) continue
+
+    const existing = byUser.get(item.user_id)
+    if (existing) {
+      existing.score += Number(item.score || 0)
+      existing.wins += Number(item.wins || 0)
+      continue
+    }
+
+    byUser.set(item.user_id, {
+      ...item,
+      score: Number(item.score || 0),
+      wins: Number(item.wins || 0),
+      game_name: null,
+    })
+  }
+
+  return [...byUser.values()]
+    .sort((a, b) => (b.score - a.score) || (b.wins - a.wins) || a.display_name.localeCompare(b.display_name))
 }
 
 export default userService

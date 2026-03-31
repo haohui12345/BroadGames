@@ -9,6 +9,7 @@ import { ChevronLeft, ChevronRight, CornerDownLeft, Delete, Lightbulb } from 'lu
 import clsx from 'clsx'
 import { getGameHelp } from '@/data/gameHelp'
 import { ensureSoloSession, loadGameSnapshot, recordSoloGameResult, saveGameSnapshot } from '@/utils/gamePersistence'
+import { getSocketUrl } from '@/utils/network'
 import toast from 'react-hot-toast'
 
 const GAME_SLUG = 'memory'
@@ -76,7 +77,8 @@ export default function MemoryPage() {
 
   useEffect(() => {
     if (mode !== 'vs_player' || !session) return
-    const socket = io(import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3000', { auth: { token } })
+    const socketUrl = getSocketUrl()
+    const socket = socketUrl ? io(socketUrl, { auth: { token } }) : io({ auth: { token } })
     socketRef.current = socket
     socket.emit('join_session', { sessionId: session.id })
 
