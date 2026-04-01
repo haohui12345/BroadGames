@@ -1,3 +1,4 @@
+// Top-level route map for auth, client, admin, and game screens.
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { useThemeStore } from '@/store/themeStore'
@@ -18,24 +19,25 @@ import LoginPage    from '@/pages/auth/LoginPage'
 import RegisterPage from '@/pages/auth/RegisterPage'
 
 // Client pages
-import HomePage        from '@/pages/client/HomePage'
-import GamesPage       from '@/pages/client/GamesPage'
+import HomePage        from '@/pages/client/HomePage'          // Trang chủ
+import GamesPage       from '@/pages/client/GamesPage'          // Danh sách game + đánh giá
+import RankingPage     from '@/pages/client/RankingPage'        // Bảng xếp hạng
+import FriendsPage     from '@/pages/client/FriendsPage'        // Bạn bè: tìm kiếm, kết bạn, lời mời
+import MessagesPage    from '@/pages/client/MessagesPage'       // Nhắn tin với bạn bè
+import AchievementsPage from '@/pages/client/AchievementsPage' // Thành tựu đã mở / chưa mở
+import ProfilePage     from '@/pages/client/ProfilePage'        // Hồ sơ cá nhân
+import UserProfilePage from '@/pages/client/UserProfilePage'   // Xem hồ sơ người khác
 import RankingSimplePage from '@/pages/client/RankingSimplePage'
-import FriendsPage     from '@/pages/client/FriendsPage'
-import MessagesPage    from '@/pages/client/MessagesCenterPage'
-import AchievementsPage from '@/pages/client/AchievementsPage'
-import ProfilePage     from '@/pages/client/ProfileSettingsPage'
-import UserProfilePage from '@/pages/client/UserProfileDetailsPage'
 
 // Game pages
-import GameSelectPage  from '@/pages/game/GameSelectPage'
-import CaroFivePage    from '@/pages/game/CaroFivePage'
-import CaroFourPage    from '@/pages/game/CaroFourPage'
-import TicTacToePage   from '@/pages/game/TicTacToePage'
-import SnakePage       from '@/pages/game/SnakeArcadePage'
-import Match3Page      from '@/pages/game/Match3Page'
-import MemoryPage      from '@/pages/game/MemoryPage'
-import DrawPage        from '@/pages/game/DrawingBoardPage'
+import GameSelectPage  from '@/pages/game/GameSelectPage'  // Chọn game
+import CaroFivePage    from '@/pages/game/CaroFivePage'    // Caro 5 (vs máy + vs người qua socket)
+import CaroFourPage    from '@/pages/game/CaroFourPage'    // Caro 4
+import TicTacToePage   from '@/pages/game/TicTacToePage'  // Tic-tac-toe
+import SnakePage       from '@/pages/game/SnakePage'       // Rắn săn mồi
+import Match3Page      from '@/pages/game/Match3Page'      // Ghép hàng 3
+import MemoryPage      from '@/pages/game/MemoryPage'      // Cờ trí nhớ
+import DrawPage        from '@/pages/game/DrawPage'        // Bảng vẽ tự do
 
 // Admin pages
 import AdminDashboard  from '@/pages/admin/AdminDashboard'

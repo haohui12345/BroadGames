@@ -1,3 +1,4 @@
+// Admin stats screen: summarizes totals and gameplay distribution.
 import { useState, useEffect } from 'react'
 import { BarChart3, Users, Gamepad2, TrendingUp, ShieldOff } from 'lucide-react'
 import adminService from '@/services/adminService'
@@ -7,6 +8,7 @@ export default function AdminStats() {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
 
+  // This screen is read-only, so a single fetch is enough.
   useEffect(() => {
     adminService.getStats()
       .then(r => setStats(r.data))
@@ -16,6 +18,7 @@ export default function AdminStats() {
 
   if (loading) return <div className="p-6"><Spinner /></div>
 
+  // These derived values drive the chart scaling and the summary text.
   const topGames = stats?.hot_games || []
   const maxPlays = topGames[0]?.play_count || 1
 

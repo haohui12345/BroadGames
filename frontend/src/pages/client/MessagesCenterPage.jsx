@@ -1,3 +1,4 @@
+// Message center wrapper: keeps the inbox shell aligned with the routed chat view.
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'

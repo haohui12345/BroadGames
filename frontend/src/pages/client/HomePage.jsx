@@ -1,3 +1,4 @@
+// Home dashboard: shows quick stats, featured games, and leaderboard preview.
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Trophy, Gamepad2, Star, ChevronRight, Play } from 'lucide-react'
@@ -24,6 +25,7 @@ export default function HomePage() {
   const [ranking, setRanking] = useState([])
   const [games, setGames] = useState([])
 
+  // Load leaderboard preview and enabled games once on mount.
   useEffect(() => {
     userService
       .getRanking({ type: 'global', page: 1 })
@@ -47,12 +49,14 @@ export default function HomePage() {
       .catch(() => setGames([]))
   }, [])
 
+  // These values are derived from local state so they are cheap to render.
   const totalWins = Object.values(scores || {}).reduce((s, g) => s + (g?.wins || 0), 0)
   const firstGamePath = games[0]?.slug ? `/play/${games[0].slug}` : '/games'
   const featuredGames = games.slice(0, 4)
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-8 animate-fade-in">
+      {/* Greeting and primary action */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Chào, {user?.display_name || 'người chơi'} 👋</h1>
@@ -66,6 +70,7 @@ export default function HomePage() {
         </Link>
       </div>
 
+      {/* Quick stats cards */}
       <div className="grid grid-cols-3 gap-4">
         {[
           { icon: Trophy, label: 'Số trận thắng', value: totalWins, color: 'text-yellow-500' },
@@ -84,6 +89,7 @@ export default function HomePage() {
         ))}
       </div>
 
+      {/* Featured games */}
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-bold text-lg">Trò chơi</h2>
@@ -118,6 +124,7 @@ export default function HomePage() {
         )}
       </div>
 
+      {/* Leaderboard preview */}
       {ranking.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-4">

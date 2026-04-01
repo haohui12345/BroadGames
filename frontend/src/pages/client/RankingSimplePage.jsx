@@ -1,3 +1,4 @@
+// Lightweight leaderboard that merges paginated ranking rows for quick review.
 import { useEffect, useState } from 'react'
 import userService from '@/services/userService'
 

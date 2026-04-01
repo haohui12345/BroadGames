@@ -1,3 +1,4 @@
+// Auth state: keeps the signed-in user and token in persistent storage.
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import api from '@/utils/api'

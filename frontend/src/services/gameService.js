@@ -1,3 +1,4 @@
+// Game API wrapper with caching for the enabled game list.
 import api from '@/utils/api'
 
 // Cache game list để tránh gọi lại nhiều lần

@@ -1,3 +1,4 @@
+// Admin shell with navigation, quick game toggles, and moderation actions.
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { LayoutDashboard, Users, Gamepad2, BarChart3, LogOut, Sun, Moon, ChevronLeft, ToggleLeft, ToggleRight, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'

@@ -1,3 +1,4 @@
+// Local profile form that updates the in-memory auth store.
 import { useState } from 'react'
 import { useAuthStore } from '@/store/authStore'
 

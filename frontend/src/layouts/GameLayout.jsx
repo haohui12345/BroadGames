@@ -1,3 +1,4 @@
+// Lightweight shell used by gameplay screens so they stay distraction-free.
 import { Outlet, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Sun, Moon } from 'lucide-react'
 import { useThemeStore } from '@/store/themeStore'

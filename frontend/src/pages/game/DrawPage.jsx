@@ -1,3 +1,4 @@
+// Free draw page: simple canvas playground with brush, eraser, and export.
 import { useRef, useState, useEffect } from 'react'
 import GameHeader from '@/components/game/GameHeader'
 import { Eraser, Trash2, Download, Minus, Plus } from 'lucide-react'
@@ -12,6 +13,7 @@ export default function DrawPage() {
   const [eraser, setEraser] = useState(false)
   const lastPos = useRef(null)
 
+  // Paint a blank white canvas so every new session starts clean.
   useEffect(() => {
     const canvas = canvasRef.current
     const ctx = canvas.getContext('2d')
@@ -19,6 +21,7 @@ export default function DrawPage() {
     ctx.fillRect(0, 0, canvas.width, canvas.height)
   }, [])
 
+  // Convert mouse/touch events into canvas coordinates.
   const getPos = (e) => {
     const rect = canvasRef.current.getBoundingClientRect()
     const scaleX = canvasRef.current.width / rect.width
@@ -27,6 +30,7 @@ export default function DrawPage() {
     return { x: (src.clientX - rect.left) * scaleX, y: (src.clientY - rect.top) * scaleY }
   }
 
+  // Start a new brush stroke.
   const startDraw = (e) => {
     e.preventDefault()
     setDrawing(true)
@@ -39,6 +43,7 @@ export default function DrawPage() {
     ctx.fill()
   }
 
+  // Continue the current stroke while the pointer moves.
   const draw = (e) => {
     e.preventDefault()
     if (!drawing) return
@@ -57,12 +62,14 @@ export default function DrawPage() {
 
   const endDraw = () => setDrawing(false)
 
+  // Fill the canvas white again to clear the drawing.
   const clearCanvas = () => {
     const ctx = canvasRef.current.getContext('2d')
     ctx.fillStyle = '#ffffff'
     ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height)
   }
 
+  // Export the canvas as a PNG file.
   const download = () => {
     const link = document.createElement('a')
     link.download = 'boardzone-drawing.png'

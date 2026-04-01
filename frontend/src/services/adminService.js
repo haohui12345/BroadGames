@@ -1,3 +1,4 @@
+// Admin API wrapper for system stats, user moderation, and game management.
 import api from '@/utils/api'
 import gameService from '@/services/gameService'
 

@@ -1,3 +1,4 @@
+// Public profile page: shows another user's summary and profile stats.
 import { useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'

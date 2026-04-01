@@ -1,3 +1,4 @@
+// Auth API wrapper used by login, register, profile, and password flows.
 import api from '@/utils/api'
 
 const authService = {

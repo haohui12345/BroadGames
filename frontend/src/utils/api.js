@@ -1,3 +1,4 @@
+// Shared axios client with token injection and auth redirect handling.
 import axios from 'axios'
 import { useAuthStore } from '@/store/authStore'
 

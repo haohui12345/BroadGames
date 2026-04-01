@@ -1,3 +1,4 @@
+// User API wrapper for profiles, friends, messages, achievements, and rankings.
 import api from '@/utils/api'
 
 const userService = {

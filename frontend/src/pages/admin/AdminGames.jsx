@@ -1,3 +1,4 @@
+// Admin games screen: toggle availability and edit game settings.
 import { useState, useEffect } from 'react'
 import { ToggleLeft, ToggleRight, Edit2, Save, X, AlertTriangle, Power, PowerOff } from 'lucide-react'
 import adminService from '@/services/adminService'
@@ -16,6 +17,7 @@ export default function AdminGames() {
   const [confirmGame, setConfirmGame] = useState(null)
   const [bulkLoading, setBulkLoading] = useState(false)
 
+  // Load all games so the admin can toggle and edit them in one place.
   const load = () => {
     setLoading(true)
     adminService.getGames()
@@ -26,11 +28,13 @@ export default function AdminGames() {
 
   useEffect(() => { load() }, [])
 
+  // Ask for confirmation before disabling an enabled game.
   const handleToggleClick = (game) => {
     if (game.enabled) setConfirmGame(game)
     else doToggle(game)
   }
 
+  // Toggle a single game and patch the local list immediately.
   const doToggle = async (game) => {
     setToggling(game.id)
     try {
@@ -64,11 +68,13 @@ export default function AdminGames() {
     }
   }
 
+  // Open the edit modal with the current board size and status.
   const openEdit = (g) => {
     setEditGame(g)
     setEditForm({ board_size: g.board_size, enabled: g.enabled })
   }
 
+  // Save the edited game settings back to the backend.
   const saveEdit = async () => {
     setSaving(true)
     try {

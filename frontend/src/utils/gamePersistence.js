@@ -1,3 +1,4 @@
+// Helpers that create, save, and restore solo game snapshots via the backend.
 import gameService from '@/services/gameService'
 
 export async function ensureSoloSession({ sessionId, setSessionId, gameSlug, boardSize }) {

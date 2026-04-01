@@ -1,3 +1,4 @@
+// Generic modal with escape-key close and backdrop click handling.
 import { useEffect } from 'react'
 import { X } from 'lucide-react'
 

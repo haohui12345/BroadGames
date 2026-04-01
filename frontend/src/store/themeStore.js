@@ -1,3 +1,4 @@
+// Theme state: persists dark/light mode and syncs the document class.
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 

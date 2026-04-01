@@ -1,3 +1,4 @@
+// Session header for multiplayer-ready games with timer controls and help.
 import { useState, useEffect, useRef } from 'react'
 import { Save, FolderOpen, RotateCcw, Clock, BookOpen, Star, Settings2 } from 'lucide-react'
 import { useGameStore } from '@/store/gameStore'

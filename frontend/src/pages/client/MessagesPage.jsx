@@ -1,3 +1,4 @@
+// Direct messages screen with friend sidebar and polling-based chat refresh.
 import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Send } from 'lucide-react'

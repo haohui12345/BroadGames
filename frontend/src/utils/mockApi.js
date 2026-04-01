@@ -1,3 +1,4 @@
+// Mock API layer used by the local demo data and fallback screens.
 import {
   MOCK_USER,
   MOCK_ADMIN,

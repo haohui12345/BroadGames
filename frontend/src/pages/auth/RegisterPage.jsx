@@ -1,3 +1,4 @@
+// Registration form: validates fields, creates the account, then logs the user in.
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, UserPlus } from 'lucide-react'

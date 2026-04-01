@@ -1,3 +1,4 @@
+// Shared Caro logic for win detection and simple AI move selection.
 // Check win after placing at (r,c)
 export function checkWin(board, r, c, player, winLen = 5) {
   const rows = board.length, cols = board[0].length

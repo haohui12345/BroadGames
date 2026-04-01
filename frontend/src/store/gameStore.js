@@ -1,3 +1,4 @@
+// Game state: tracks scores, saves, and shared timer preferences across all games.
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import gameService from '@/services/gameService'
@@ -24,6 +25,7 @@ export const useGameStore = create(
         }),
 
       recordResult: async (gameSlug, result, sessionId, userId) => {
+        // Allow callers to pass either a raw sessionId or an options object.
         const options = typeof sessionId === 'object' && sessionId !== null
           ? sessionId
           : { sessionId, userId }

@@ -1,3 +1,4 @@
+// Ranking view with client-side filters for scope and game.
 import { useEffect, useState } from 'react'
 import userService from '@/services/userService'
 

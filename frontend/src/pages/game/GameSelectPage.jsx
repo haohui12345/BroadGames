@@ -1,3 +1,4 @@
+// Game selector screen: lets the user browse enabled games with keyboard or click.
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import GameBoard from '@/components/game/GameBoard'

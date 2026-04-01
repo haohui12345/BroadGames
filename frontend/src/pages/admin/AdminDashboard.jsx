@@ -1,3 +1,4 @@
+// Admin dashboard: aggregates system health and top-level stats.
 import { useState, useEffect } from 'react'
 import { Users, Gamepad2, Trophy, TrendingUp, Activity } from 'lucide-react'
 import adminService from '@/services/adminService'
@@ -7,6 +8,7 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
 
+  // Fetch summary stats once when the page opens.
   useEffect(() => {
     adminService.getStats()
       .then(r => setStats(r.data))
@@ -14,6 +16,7 @@ export default function AdminDashboard() {
       .finally(() => setLoading(false))
   }, [])
 
+  // Flatten the API payload into simple cards for rendering.
   const CARDS = stats ? [
     { label: 'Tổng người dùng', val: stats.total_users    ?? 0, icon: Users,     color: 'text-blue-500',    bg: 'bg-blue-50 dark:bg-blue-900/20' },
     { label: 'Tổng trận đã chơi', val: stats.total_matches ?? 0, icon: Gamepad2, color: 'text-purple-500',  bg: 'bg-purple-50 dark:bg-purple-900/20' },

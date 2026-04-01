@@ -1,3 +1,4 @@
+// Empty state block used when a list or panel has no data.
 export default function Empty({ icon = '📭', title = 'Trống', desc = '', action }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">

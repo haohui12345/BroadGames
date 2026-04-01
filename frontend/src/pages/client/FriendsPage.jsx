@@ -1,3 +1,4 @@
+// Friends hub: search users, manage requests, and keep the friend list updated.
 import { useEffect, useState } from 'react'
 import { UserPlus, UserCheck, UserX, Search, Users } from 'lucide-react'
 import userService from '@/services/userService'
@@ -11,6 +12,7 @@ export default function FriendsPage() {
   const [loading, setLoading] = useState(true)
   const [sentIds, setSentIds] = useState(new Set()) // id đã gửi lời mời
 
+  // Load friends and pending requests together so the two panels stay in sync.
   const load = async () => {
     setLoading(true)
     try {
@@ -29,6 +31,7 @@ export default function FriendsPage() {
 
   useEffect(() => { load() }, [])
 
+  // Search users by keyword and show the result list below the search bar.
   const handleSearch = async () => {
     if (!keyword.trim()) return
     try {
@@ -39,6 +42,7 @@ export default function FriendsPage() {
     }
   }
 
+  // Send a request, then mark that target as pending in local UI state.
   const addFriend = async (id) => {
     try {
       await userService.sendFriendRequest(id)
@@ -49,6 +53,7 @@ export default function FriendsPage() {
     }
   }
 
+  // Accept or decline requests, then reload to avoid stale state.
   const acceptRequest = async (requesterId) => {
     try {
       await userService.acceptFriendRequest(requesterId)
@@ -79,6 +84,7 @@ export default function FriendsPage() {
     }
   }
 
+  // Sets make status checks O(1) during render.
   const friendIds = new Set(friends.map(f => f.id))
   const requestIds = new Set(requests.map(r => r.from_user_id))
 
@@ -89,7 +95,7 @@ export default function FriendsPage() {
         <p className="text-sm text-[var(--text-muted)] mt-1">Tìm kiếm người dùng, kết bạn và quản lý danh sách bạn bè.</p>
       </div>
 
-      {/* Tìm kiếm */}
+      {/* Search bar */}
       <div className="card p-4 flex gap-3">
         <input
           value={keyword}
@@ -103,7 +109,7 @@ export default function FriendsPage() {
         </button>
       </div>
 
-      {/* Kết quả tìm kiếm */}
+      {/* Search results */}
       {results.length > 0 && (
         <div className="card p-5">
           <h2 className="text-lg font-semibold mb-4">Kết quả tìm kiếm</h2>
@@ -134,7 +140,7 @@ export default function FriendsPage() {
       )}
 
       <div className="grid grid-cols-2 gap-6">
-        {/* Danh sách bạn bè */}
+        {/* Friend list */}
         <div className="card p-5">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <Users size={18}/> Bạn bè ({friends.length})
@@ -160,7 +166,7 @@ export default function FriendsPage() {
           )}
         </div>
 
-        {/* Lời mời kết bạn */}
+        {/* Incoming requests */}
         <div className="card p-5">
           <h2 className="text-lg font-semibold mb-4">Lời mời kết bạn ({requests.length})</h2>
           {requests.length === 0 ? (

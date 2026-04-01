@@ -1,3 +1,4 @@
+// Compact header for game screens with score, timer, save/load, and help.
 import { useState, useEffect, useRef } from 'react'
 import { Save, FolderOpen, RotateCcw, Clock, BookOpen, Star } from 'lucide-react'
 import { useGameStore } from '@/store/gameStore'
