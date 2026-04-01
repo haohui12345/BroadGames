@@ -2,20 +2,20 @@ import { useEffect, useState } from 'react'
 import userService from '@/services/userService'
 
 const games = [
-  { slug: '', name: 'Tat ca tro choi' },
-  { slug: 'caro5', name: 'Caro hang 5' },
-  { slug: 'caro4', name: 'Caro hang 4' },
+  { slug: '', name: 'Tất cả trò chơi' },
+  { slug: 'caro5', name: 'Caro hàng 5' },
+  { slug: 'caro4', name: 'Caro hàng 4' },
   { slug: 'tictactoe', name: 'Tic-tac-toe' },
-  { slug: 'snake', name: 'Ran san moi' },
-  { slug: 'match3', name: 'Ghep hang 3' },
-  { slug: 'memory', name: 'Co tri nho' },
-  { slug: 'draw', name: 'Bang ve tu do' },
+  { slug: 'snake', name: 'Rắn săn mồi' },
+  { slug: 'match3', name: 'Ghép hàng 3' },
+  { slug: 'memory', name: 'Cờ trí nhớ' },
+  { slug: 'draw', name: 'Bảng vẽ tự do' },
 ]
 
 const scopes = [
-  { value: 'global', label: 'Toan he thong' },
-  { value: 'friends', label: 'Ban be' },
-  { value: 'personal', label: 'Ca nhan' },
+  { value: 'global', label: 'Toàn hệ thống' },
+  { value: 'friends', label: 'Bạn bè' },
+  { value: 'personal', label: 'Cá nhân' },
 ]
 
 const PAGE_SIZE = 50
@@ -99,9 +99,9 @@ export default function RankingSimplePage() {
     <div className="p-6 max-w-5xl mx-auto space-y-6">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold">Bang xep hang</h1>
+          <h1 className="text-2xl font-bold">Bảng xếp hạng</h1>
           <p className="text-sm text-[var(--text-muted)] mt-1">
-            Danh sach tat ca nguoi choi theo bo loc da chon.
+            Danh sách tất cả người chơi theo bộ lọc đã chọn.
           </p>
         </div>
 
@@ -133,7 +133,7 @@ export default function RankingSimplePage() {
       </div>
 
       <div className="text-sm text-[var(--text-muted)]">
-        {loading ? 'Dang tai du lieu...' : `${ranking.length} nguoi choi`}
+        {loading ? 'Đang tải dữ liệu...' : `${ranking.length} người chơi`}
       </div>
 
       <div className="card divide-y divide-[var(--border)] overflow-hidden">
@@ -147,7 +147,7 @@ export default function RankingSimplePage() {
               {item.display_name?.[0]?.toUpperCase() || '?'}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="font-medium truncate">{item.display_name || 'Nguoi choi'}</div>
+              <div className="font-medium truncate">{item.display_name || 'Người chơi'}</div>
               <div className="text-xs text-[var(--text-muted)] truncate">@{item.username || 'nguoi-dung'}</div>
             </div>
             <div className="text-right">
@@ -161,7 +161,7 @@ export default function RankingSimplePage() {
 
         {!loading && !ranking.length && (
           <div className="px-4 py-8 text-center text-[var(--text-muted)]">
-            Chua co du lieu xep hang.
+            Chưa có dữ liệu xếp hạng.
           </div>
         )}
       </div>
