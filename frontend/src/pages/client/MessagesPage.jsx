@@ -6,6 +6,19 @@ import userService from '@/services/userService'
 import { useAuthStore } from '@/store/authStore'
 import toast from 'react-hot-toast'
 
+function sortMessages(messages) {
+  return [...messages].sort((left, right) => {
+    const leftTime = new Date(left.created_at || 0).getTime()
+    const rightTime = new Date(right.created_at || 0).getTime()
+
+    if (leftTime === rightTime) {
+      return Number(left.id || 0) - Number(right.id || 0)
+    }
+
+    return leftTime - rightTime
+  })
+}
+
 export default function MessagesPage() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -38,7 +51,7 @@ export default function MessagesPage() {
     const fetchMessages = async () => {
       try {
         const res = await userService.getMessages(selectedId)
-        setMessages(res.data || [])
+        setMessages(sortMessages(res.data || []))
       } catch {}
     }
 
@@ -66,7 +79,7 @@ export default function MessagesPage() {
     setSending(true)
     try {
       const res = await userService.sendMessage({ receiver_id: selectedId, content: text })
-      if (res.data) setMessages(prev => [...prev, res.data])
+      if (res.data) setMessages(prev => sortMessages([...prev, res.data]))
       setContent('')
     } catch (err) {
       toast.error(err?.message || 'Không gửi được tin nhắn')
