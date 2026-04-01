@@ -10,7 +10,7 @@ const app = require('./src/app');
 const registerSocket = require('./src/socket');
 const keyPath = path.join(__dirname, 'localhost-key.pem');
 const certPath = path.join(__dirname, 'localhost.pem');
-
+const { createCorsOptions } = require('./src/config/cors');
 
 const PORT = process.env.PORT || 3000;
 
@@ -32,16 +32,13 @@ if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
 }
 
 const io = new Server(server, {
-  cors: {
-    origin: process.env.CLIENT_URL || 'https://localhost:5173',
-    credentials: true,
-  },
+  cors: createCorsOptions(),
 });
 
 registerSocket(io);
 
 server.listen(PORT, () => {
-  console.log(`-- Server đang chạy tại http://localhost:${PORT}`);
+  console.log(`-- Server dang chay tai ${protocol}://localhost:${PORT}`);
   console.log(`-- Môi trường : ${process.env.NODE_ENV || 'development'}`);
   console.log(`-- API Docs   : ${protocol}://localhost:${PORT}/api/docs`);
   console.log(`-- Health     : ${protocol}://localhost:${PORT}/api/health`);

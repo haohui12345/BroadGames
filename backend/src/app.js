@@ -1,15 +1,13 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const { createCorsOptions } = require('./config/cors');
 
 const app = express();
 
 // ── Middlewares toàn cục ───────────────────────────────────────
 app.use(helmet());
-app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
-  credentials: true,
-}));
+app.use(cors(createCorsOptions()));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
