@@ -22,7 +22,7 @@ const achievementRoutes = require('./routes/achievements')
 const friendRoutes = require('./routes/friendships');
 const messageRoutes = require('./routes/messages');
 const adminRoutes   = require('./routes/admin');
-const docsRoutes = require('./routes/docs');
+const docsRoutes = require('./routes/docsSwagger');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
