@@ -1,3 +1,4 @@
+// Timed drawing page with save/load support and canvas restore logic.
 import { useEffect, useRef, useState } from 'react'
 import { Eraser, Trash2, Download, Minus, Plus } from 'lucide-react'
 import GameToolbar from '@/components/game/GameToolbar'
@@ -18,12 +19,14 @@ export default function DrawingBoardPage() {
   const [timerKey, setTimerKey] = useState(0)
   const [timeExpired, setTimeExpired] = useState(false)
 
+  // Clear the canvas to a white background.
   const clearCanvas = () => {
     const ctx = canvasRef.current.getContext('2d')
     ctx.fillStyle = '#ffffff'
     ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height)
   }
 
+  // Restore a PNG snapshot back onto the canvas.
   const restoreCanvas = (imageData) => {
     if (!imageData) return clearCanvas()
     const image = new Image()
@@ -35,10 +38,12 @@ export default function DrawingBoardPage() {
     image.src = imageData
   }
 
+  // Initialize the drawing board once on mount.
   useEffect(() => {
     clearCanvas()
   }, [])
 
+  // Translate mouse/touch coordinates into canvas coordinates.
   const getPos = (event) => {
     const rect = canvasRef.current.getBoundingClientRect()
     const scaleX = canvasRef.current.width / rect.width
@@ -50,6 +55,7 @@ export default function DrawingBoardPage() {
     }
   }
 
+  // Begin a stroke unless the timer has expired.
   const startDraw = (event) => {
     if (timeExpired) return
     event.preventDefault()
@@ -63,6 +69,7 @@ export default function DrawingBoardPage() {
     ctx.fill()
   }
 
+  // Continue the stroke while the pointer moves.
   const draw = (event) => {
     event.preventDefault()
     if (!drawing || timeExpired) return
@@ -81,6 +88,7 @@ export default function DrawingBoardPage() {
 
   const endDraw = () => setDrawing(false)
 
+  // Create a session lazily so save/load has a backend record.
   const ensureCurrentSoloSession = async () =>
     ensureSoloSession({
       sessionId: soloSessionId,
@@ -89,6 +97,7 @@ export default function DrawingBoardPage() {
       boardSize: 1,
     })
 
+  // Store the canvas image plus tool settings as a snapshot.
   const handleSave = async () => {
     return saveGameSnapshot({
       sessionId: await ensureCurrentSoloSession(),
@@ -104,6 +113,7 @@ export default function DrawingBoardPage() {
     })
   }
 
+  // Restore a previously saved canvas snapshot.
   const handleLoad = async () => {
     const snapshot = await loadGameSnapshot({ gameSlug: 'draw', setSessionId: setSoloSessionId })
     if (!snapshot) return false
@@ -117,6 +127,7 @@ export default function DrawingBoardPage() {
     return true
   }
 
+  // Download the current canvas as PNG.
   const download = () => {
     const link = document.createElement('a')
     link.download = 'boardzone-drawing.png'

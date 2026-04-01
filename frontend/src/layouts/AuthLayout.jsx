@@ -1,3 +1,4 @@
+// Shell for login and register pages with theme toggle and centered branding.
 import { Outlet } from 'react-router-dom'
 import { useThemeStore } from '@/store/themeStore'
 import { Sun, Moon } from 'lucide-react'

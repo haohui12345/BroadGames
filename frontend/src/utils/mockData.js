@@ -1,3 +1,4 @@
+// Static mock records that back the offline/demo API helpers.
 export const MOCK_ADMIN = {
   id: 'u1',
   username: 'admin',

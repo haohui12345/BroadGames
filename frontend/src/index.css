@@ -1,3 +1,4 @@
+/* Global design tokens, utility components, and app-wide visual language. */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

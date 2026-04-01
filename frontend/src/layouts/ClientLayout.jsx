@@ -1,3 +1,4 @@
+// Main client shell with sidebar navigation and account controls.
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { Home, Gamepad2, Trophy, Users, MessageSquare, Medal, LogOut, Settings, Sun, Moon, ChevronLeft, ChevronRight, Shield } from 'lucide-react'
 import { useState } from 'react'

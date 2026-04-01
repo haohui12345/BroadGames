@@ -1,3 +1,4 @@
+// Tic-tac-toe page: uses minimax for solo play and socket sync for multiplayer.
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { io } from 'socket.io-client'
 import GameBoard from '@/components/game/GameBoard'
@@ -66,6 +67,7 @@ export default function TicTacToePage() {
   const [soloSessionId, setSoloSessionId] = useState(null)
   const resultHandled = useRef(false)
 
+  // Create or reuse a backend session so scores and saves have an id.
   const ensureCurrentSoloSession = useCallback(
     () => ensureSoloSession({
       sessionId: soloSessionId,
@@ -94,6 +96,7 @@ export default function TicTacToePage() {
     [ensureCurrentSoloSession, recordResult, user?.id]
   )
 
+  // Multiplayer socket listeners keep both players in sync.
   useEffect(() => {
     if (mode !== 'vs_player' || !session) return
     const socketUrl = getSocketUrl()
@@ -124,6 +127,7 @@ export default function TicTacToePage() {
     return () => socket.disconnect()
   }, [mode, session])
 
+  // Host-side polling checks when the guest finally joins the room.
   useEffect(() => {
     if (!waitingOpponent || !session) return
     const interval = setInterval(async () => {
@@ -140,6 +144,7 @@ export default function TicTacToePage() {
     return () => clearInterval(interval)
   }, [waitingOpponent, session])
 
+  // Place one mark, resolve the result, then hand over the turn.
   const place = useCallback((idx) => {
     if (board[idx] || result?.winner) return
     if (mode === 'vs_player' && current !== mySymbol) return toast.error('Chưa đến lượt bạn!')
@@ -206,10 +211,14 @@ export default function TicTacToePage() {
     }
   }, [board, current, result, score, mode, mySymbol, session, recordSoloResult, user?.id])
 
+  // Convert grid coordinates to a flat board index.
   const idxOf = (r, c) => r * 3 + c
   const handleEnter = (t) => { if (t?.row != null) { setCursor(t); place(idxOf(t.row, t.col)) } else place(idxOf(cursor.row, cursor.col)) }
+  // Keep the cursor inside the 3x3 board.
   const move = (dr, dc) => setCursor(p => ({ row: Math.max(0, Math.min(2, p.row+dr)), col: Math.max(0, Math.min(2, p.col+dc)) }))
+  // Reset all state for a fresh round.
   const reset = () => { setBoard(initBoard()); setCurrent('X'); setResult(null); setScore(0); setCursor({ row:1, col:1 }); resultHandled.current = false; setTimerKey(k => k+1); setSoloSessionId(null) }
+  // Timeout means the current player loses immediately.
   const handleTimeout = () => {
     if (result?.winner || resultHandled.current) return
     const nextWinner = current === 'X' ? 'O' : 'X'

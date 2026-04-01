@@ -1,3 +1,4 @@
+// Caro 5 page: supports solo vs AI and multiplayer via socket sessions.
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { io } from 'socket.io-client'
@@ -32,6 +33,7 @@ export default function CaroFivePage() {
 
   const socketRef = useRef(null)
 
+  // Reset the board back to an empty starting state.
   const initState = () => ({ board: initBoard(), current: 'X', winner: null, winLine: [], score: 0 })
 
   const [state, setState] = useState(initState)
@@ -43,6 +45,7 @@ export default function CaroFivePage() {
 
   const { board, current, winner, winLine, score } = state
 
+  // Reuse a backend session so saves and results are tied to one record.
   const ensureCurrentSoloSession = useCallback(
     () => ensureSoloSession({
       sessionId: soloSessionId,
@@ -53,6 +56,7 @@ export default function CaroFivePage() {
     [soloSessionId]
   )
 
+  // Wrap result submission so solo play and multiplayer share one flow.
   const recordSoloResult = useCallback(
     async (resultKind, options = {}) => {
       await recordSoloGameResult({

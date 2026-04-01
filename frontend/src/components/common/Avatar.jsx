@@ -1,3 +1,4 @@
+// Avatar helper that falls back to initials when no image is available.
 import clsx from 'clsx'
 
 export default function Avatar({ user, size = 'md', className }) {

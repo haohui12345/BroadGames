@@ -1,3 +1,4 @@
+// Profile detail page: displays the full public user profile information.
 import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import userService from '@/services/userService'

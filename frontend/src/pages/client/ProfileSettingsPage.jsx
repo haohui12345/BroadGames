@@ -1,3 +1,4 @@
+// Full profile editor backed by backend fetch and save calls.
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import authService from '@/services/authService'

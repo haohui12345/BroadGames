@@ -1,3 +1,4 @@
+// Classic snake arcade page with keyboard control and local score tracking.
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useGameStore } from '@/store/gameStore'
 
@@ -33,6 +34,7 @@ export default function SnakePage() {
   const directionRef = useRef(INITIAL_DIRECTION)
   const scoreRef = useRef(0)
 
+  // Mirror live state into refs so the interval callback always sees the latest values.
   useEffect(() => {
     directionRef.current = direction
   }, [direction])
@@ -41,6 +43,7 @@ export default function SnakePage() {
     scoreRef.current = score
   }, [score])
 
+  // Push the current score to the shared game store for dashboard badges.
   useEffect(() => {
     setCurrentGame?.({
       key: 'snake',
@@ -50,6 +53,7 @@ export default function SnakePage() {
     })
   }, [score, setCurrentGame])
 
+  // Keyboard handler: arrows/WASD move, Enter starts or pauses the game.
   useEffect(() => {
     const handleKeyDown = (e) => {
       const key = e.key.toLowerCase()
@@ -74,6 +78,7 @@ export default function SnakePage() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
+  // Main game loop: move the snake, detect collisions, and grow on food.
   useEffect(() => {
     if (!running || gameOver) return
 
@@ -120,6 +125,7 @@ export default function SnakePage() {
     return () => clearInterval(timer)
   }, [running, gameOver, food, saveScore])
 
+  // Reset all local state back to the initial snake and score.
   const handleRestart = () => {
     setSnake(INITIAL_SNAKE)
     setFood(getRandomFood(INITIAL_SNAKE))
@@ -131,6 +137,7 @@ export default function SnakePage() {
     scoreRef.current = 0
   }
 
+  // Precompute cell types so the render loop stays simple and predictable.
   const cells = useMemo(() => {
     const snakeMap = new Set(snake.map((part) => `${part.x}-${part.y}`))
 

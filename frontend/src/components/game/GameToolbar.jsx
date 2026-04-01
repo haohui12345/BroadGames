@@ -1,3 +1,4 @@
+// Alternate toolbar used by games that need a richer timer editor.
 import { useState, useEffect, useRef } from 'react'
 import { Save, FolderOpen, RotateCcw, Clock, BookOpen, Star, Settings2 } from 'lucide-react'
 import { useGameStore } from '@/store/gameStore'

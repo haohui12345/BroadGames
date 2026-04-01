@@ -1,3 +1,4 @@
+// Memory card game with solo mode, multiplayer sync, and turn tracking.
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { io } from 'socket.io-client'
 import GameToolbar from '@/components/game/GameToolbar'
@@ -47,6 +48,7 @@ export default function MemoryPage() {
   const [soloSessionId, setSoloSessionId] = useState(null)
   const lockRef = useRef(false)
 
+  // Reuse a backend session when saving or finishing the solo game.
   const ensureCurrentSoloSession = useCallback(
     () => ensureSoloSession({
       sessionId: soloSessionId,
@@ -75,6 +77,7 @@ export default function MemoryPage() {
     [ensureCurrentSoloSession, recordResult, user?.id]
   )
 
+  // Multiplayer sockets keep both boards in sync and swap turns after each move.
   useEffect(() => {
     if (mode !== 'vs_player' || !session) return
     const socketUrl = getSocketUrl()
@@ -105,6 +108,7 @@ export default function MemoryPage() {
     return () => socket.disconnect()
   }, [mode, session])
 
+  // While waiting in the lobby, poll until the second player joins.
   useEffect(() => {
     if (!waitingOpponent || !session) return
     const interval = setInterval(async () => {
@@ -121,6 +125,7 @@ export default function MemoryPage() {
     return () => clearInterval(interval)
   }, [waitingOpponent, session])
 
+  // Flip one card, then resolve the pair once two cards are visible.
   const flip = useCallback((idx) => {
     if (gameResult || done) return
     if (lockRef.current) return
@@ -187,10 +192,14 @@ export default function MemoryPage() {
     }
   }, [cards, flipped, gameResult, done, mode, myTurn, session, myScore, oppScore, isHost])
 
+  // Convert cursor coordinates into the flat array index used by the board.
   const idxOf = (r,c) => r*COLS+c
   const handleEnter = () => flip(idxOf(cursor.row, cursor.col))
+  // Cursor movement is clamped so keyboard navigation never leaves the grid.
   const move = (dr,dc) => setCursor(p=>({ row:Math.max(0,Math.min(ROWS-1,p.row+dr)), col:Math.max(0,Math.min(COLS-1,p.col+dc)) }))
+  // Reset all memory-game state back to a fresh shuffled deck.
   const reset = () => { setCards(initCards()); setFlipped([]); setMoves(0); setScore(0); setMyScore(0); setOppScore(0); setDone(false); setGameResult(null); setHintShown([]); setCursor({row:0,col:0}); setSoloSessionId(null); setTimerKey(k=>k+1); lockRef.current=false }
+  // If time runs out, finish the round and record the loss once.
   const handleTimeout = () => {
     if (gameResult) return
     if (mode === 'vs_player' && socketRef.current && session) {

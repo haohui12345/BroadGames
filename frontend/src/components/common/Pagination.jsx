@@ -1,3 +1,4 @@
+// Simple paginator used by list pages with compact ellipsis logic.
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import clsx from 'clsx'
 

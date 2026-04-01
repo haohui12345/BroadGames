@@ -1,3 +1,4 @@
+// End-of-game overlay with replay and optional rating submission.
 import { useState } from 'react'
 import { RefreshCw, Home, Star, MessageSquare } from 'lucide-react'
 import { Link } from 'react-router-dom'

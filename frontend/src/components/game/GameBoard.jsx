@@ -1,3 +1,4 @@
+// Keyboard-friendly grid board used by the turn-based games and game selector.
 import { useEffect, useCallback, useState } from 'react'
 import { ChevronLeft, ChevronRight, CornerDownLeft, Delete, Lightbulb } from 'lucide-react'
 import clsx from 'clsx'

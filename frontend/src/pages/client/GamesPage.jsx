@@ -1,3 +1,4 @@
+// Games directory: fetches enabled games and links into the play routes.
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useGameStore } from '@/store/gameStore'

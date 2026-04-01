@@ -1,3 +1,4 @@
+// Loads game metadata first and blocks access when an admin disables the game.
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Spinner from '@/components/common/Spinner'

@@ -1,3 +1,4 @@
+// Simple help modal that renders the game-specific instructions list.
 import Modal from '@/components/common/Modal'
 
 export default function GameHelpModal({ open, onClose, help }) {

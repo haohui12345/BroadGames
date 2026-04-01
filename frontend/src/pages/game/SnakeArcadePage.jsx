@@ -1,3 +1,4 @@
+// Enhanced snake page with timer, save/load, and end-of-game result overlay.
 import { useEffect, useMemo, useRef, useState } from 'react'
 import GameToolbar from '@/components/game/GameToolbar'
 import GameResult from '@/components/game/GameResult'
@@ -42,6 +43,7 @@ export default function SnakeArcadePage() {
   const scoreRef = useRef(0)
   const resultHandledRef = useRef(false)
 
+  // Create the backend session lazily so save/load and results have an id.
   const ensureCurrentSoloSession = async () =>
     ensureSoloSession({
       sessionId: soloSessionId,
@@ -50,14 +52,17 @@ export default function SnakeArcadePage() {
       boardSize: BOARD_SIZE,
     })
 
+  // Keep refs synced with the React state for the interval callback.
   useEffect(() => {
     directionRef.current = direction
   }, [direction])
 
+  // Track the score in a ref because the tick callback reads it outside render.
   useEffect(() => {
     scoreRef.current = score
   }, [score])
 
+  // Keyboard control: arrows/WASD steer the snake, Enter toggles running.
   useEffect(() => {
     const handleKeyDown = (event) => {
       const key = event.key.toLowerCase()
@@ -82,6 +87,7 @@ export default function SnakeArcadePage() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [gameResult])
 
+  // Finish the game exactly once and send the final result to the backend.
   const finishGame = async (message) => {
     if (resultHandledRef.current) return
     resultHandledRef.current = true
@@ -100,6 +106,7 @@ export default function SnakeArcadePage() {
     })
   }
 
+  // Main loop: move snake, detect collision, and grow when food is eaten.
   useEffect(() => {
     if (!running || gameOver || gameResult) return
 
@@ -144,6 +151,7 @@ export default function SnakeArcadePage() {
     return () => clearInterval(timer)
   }, [running, gameOver, food, gameResult])
 
+  // Restart from a clean state and allow a new result to be recorded.
   const reset = () => {
     setSnake(INITIAL_SNAKE)
     setFood(getRandomFood(INITIAL_SNAKE))
@@ -159,6 +167,7 @@ export default function SnakeArcadePage() {
     setTimerKey((value) => value + 1)
   }
 
+  // Restore a previously saved snapshot from the backend.
   const handleLoad = async () => {
     const snapshot = await loadGameSnapshot({ gameSlug: 'snake', setSessionId: setSoloSessionId })
     if (!snapshot) return false
@@ -176,11 +185,13 @@ export default function SnakeArcadePage() {
     return true
   }
 
+  // Timeout just ends the session with a loss message.
   const handleTimeout = () => {
     if (gameResult) return
     finishGame('Hết giờ! Bạn cần bắt đầu ván mới.')
   }
 
+  // Convert snake + food positions into a flat grid for rendering.
   const cells = useMemo(() => {
     const snakeMap = new Set(snake.map((part) => `${part.x}-${part.y}`))
 

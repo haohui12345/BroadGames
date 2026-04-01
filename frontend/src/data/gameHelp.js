@@ -1,3 +1,4 @@
+// Centralized help text for each game and for the game selector screen.
 export const GAME_HELP = {
   select: {
     title: 'Hướng dẫn chọn trò chơi',

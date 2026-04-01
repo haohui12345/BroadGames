@@ -1,3 +1,4 @@
+// Match-3 page: swaps adjacent gems, clears matches, and drops new pieces.
 import { useState, useCallback } from 'react'
 import GameToolbar from '@/components/game/GameToolbar'
 import GameResult from '@/components/game/GameResult'
@@ -55,6 +56,7 @@ export default function Match3Page() {
   const [result, setResult] = useState(null)
   const [soloSessionId, setSoloSessionId] = useState(null)
 
+  // Create or reuse a backend session so the final score can be saved.
   const ensureCurrentSoloSession = useCallback(
     () => ensureSoloSession({
       sessionId: soloSessionId,
@@ -81,6 +83,7 @@ export default function Match3Page() {
     [ensureCurrentSoloSession, recordResult]
   )
 
+  // Recursively clear matches, drop gems, and keep awarding combo points.
   const processBoard = useCallback((b, addScore=0) => {
     const matches = findMatches(b)
     if (matches.size === 0) { setBoard(b); setScore(s=>s+addScore); return }
@@ -93,6 +96,7 @@ export default function Match3Page() {
     }, 300)
   }, [])
 
+  // Only adjacent swaps that produce a match are accepted.
   const trySwap = (r1,c1,r2,c2) => {
     if (r2<0||r2>=ROWS||c2<0||c2>=COLS) return
     const nb = board.map(row=>[...row])
@@ -103,6 +107,7 @@ export default function Match3Page() {
     processBoard(nb)
   }
 
+  // Enter either selects a gem or confirms the swap with the focused cell.
   const handleEnter = () => {
     if (!selected) { setSelected(cursor) }
     else {
@@ -112,8 +117,11 @@ export default function Match3Page() {
     }
   }
 
+  // Keyboard navigation keeps the cursor inside the board bounds.
   const move = (dr,dc) => setCursor(p=>({ row:Math.max(0,Math.min(ROWS-1,p.row+dr)), col:Math.max(0,Math.min(COLS-1,p.col+dc)) }))
+  // Reset the puzzle to a fresh random board.
   const reset = () => { setBoard(initBoard()); setScore(0); setSelected(null); setResult(null); setSoloSessionId(null); setTimerKey(k=>k+1) }
+  // When the timer ends, we record a draw and lock the board.
   const handleTimeout = () => {
     if (result) return
     setSelected(null)

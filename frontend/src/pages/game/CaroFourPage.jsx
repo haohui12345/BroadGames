@@ -1,3 +1,4 @@
+// Caro 4 page: same flow as Caro 5, but with a smaller board and win length.
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { io } from 'socket.io-client'
@@ -44,6 +45,7 @@ export default function CaroFourPage() {
   const resultHandled = useRef(false)
   const { board, current, winner, winLine, score } = state
 
+  // Reuse a backend session so saves and results are tied to one record.
   const ensureCurrentSoloSession = useCallback(
     () => ensureSoloSession({
       sessionId: soloSessionId,
@@ -72,6 +74,7 @@ export default function CaroFourPage() {
     [ensureCurrentSoloSession, recordResult, user?.id]
   )
 
+  // Multiplayer mode listens to socket events from the opponent.
   useEffect(() => {
     if (mode !== 'vs_player' || !session) return
     const socketUrl = getSocketUrl()
@@ -96,6 +99,7 @@ export default function CaroFourPage() {
     return () => socket.disconnect()
   }, [mode, session])
 
+  // Host polling waits for the guest to join before starting.
   useEffect(() => {
     if (!waitingOpponent || !session) return
     const interval = setInterval(async () => {
@@ -115,6 +119,7 @@ export default function CaroFourPage() {
     return () => clearInterval(interval)
   }, [waitingOpponent, session])
 
+  // Place a mark, check win conditions, and trigger the next turn.
   const place = useCallback((r, c) => {
     if (board[r][c] || winner) return
     if (mode === 'vs_player') {
@@ -175,8 +180,11 @@ export default function CaroFourPage() {
   }, [board, current, winner, score, mode, mySymbol, session, recordSoloResult, user?.id])
 
   const handleEnter = (t) => { if (t?.row != null) { setCursor(t); place(t.row, t.col) } else place(cursor.row, cursor.col) }
+  // Cursor movement stays inside the board boundaries.
   const move = (dr, dc) => setCursor(p => ({ row: Math.max(0, Math.min(ROWS - 1, p.row + dr)), col: Math.max(0, Math.min(COLS - 1, p.col + dc)) }))
+  // Reset the round to an empty 12x12 board.
   const reset = () => { setState({ board: initBoard(), current: 'X', winner: null, winLine: [], score: 0 }); setCursor({ row: 5, col: 5 }); setHintCell(null); resultHandled.current = false; setSoloSessionId(null); setTimerKey(k => k + 1) }
+  // When the timer ends, the other side wins by default.
   const handleTimeout = () => {
     setState(prev => {
       if (prev.winner || resultHandled.current) return prev

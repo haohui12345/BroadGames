@@ -1,3 +1,4 @@
+// User API wrapper for profiles, friends, messages, achievements, and rankings.
 import api from '@/utils/api'
 
 const userService = {
@@ -91,18 +92,22 @@ const userService = {
   },
 
   // Ranking - hỗ trợ type: global | friends | personal
-  getRanking: async ({ gameSlug, type, page = 1 } = {}) => {
+  getRanking: async ({ gameSlug, type, page = 1, limit = 20 } = {}) => {
     if (type === 'friends') {
-      const res = await api.get('/users/rankings/friends', { params: { page, game_slug: gameSlug } })
-      const rankings = (res.data.rankings || []).map(mapRanking)
-      return { data: !gameSlug ? aggregateRankings(rankings) : rankings }
+    const res = await api.get('/users/rankings/friends', { 
+      params: { page, page_size: limit, game_slug: gameSlug } 
+    })
+
+    const rankings = (res.data.rankings || []).map(mapRanking)
+
+    return { data: !gameSlug ? aggregateRankings(rankings) : rankings }
     }
     if (type === 'personal') {
-      const res = await api.get('/users/rankings/me', { params: { page } })
+      const res = await api.get('/users/rankings/me', { params: { page, limit } })
       return { data: (res.data.rankings || []).map(mapRanking) }
     }
     // global
-    const params = { page }
+    const params = { page, limit }
     if (gameSlug) params.game_slug = gameSlug
     const res = await api.get('/users/rankings', { params })
     const rankings = (res.data.rankings || []).map(mapRanking)
@@ -124,10 +129,16 @@ function mapRanking(r) {
     username: r.username,
     display_name: r.full_name || r.username,
     avatar_url: r.avatar_url,
-    score: r.total_score,
-    wins: r.wins,
+    score: Number(r.total_score || 0),
+    wins: Number(r.wins || 0),
+    losses: Number(r.losses || 0),
+    draws: Number(r.draws || 0),
     game_name: r.game_name,
-    is_me: r.is_me,
+    game_code: r.game_code,
+    rank: Number(r.rank || 0),
+    games_played: Number(r.games_played || 0),
+    last_updated: r.last_updated || null,
+    is_me: Boolean(r.is_me),
   }
 }
 

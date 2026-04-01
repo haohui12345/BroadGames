@@ -1,3 +1,4 @@
+// Achievements page: refreshes unlock status and displays earned badges.
 import { useEffect, useState } from 'react'
 import userService from '@/services/userService'
 import api from '@/utils/api'

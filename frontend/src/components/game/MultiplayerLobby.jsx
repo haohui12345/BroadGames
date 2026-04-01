@@ -1,3 +1,4 @@
+// Multiplayer lobby for creating and joining waiting rooms.
 import { useState, useEffect, useRef } from 'react'
 import { Users, Plus, RefreshCw, LogIn, Clock } from 'lucide-react'
 import gameService from '@/services/gameService'

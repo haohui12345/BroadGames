@@ -1,3 +1,4 @@
+// Admin users screen: search, paginate, ban, and unban accounts.
 import { useState, useEffect } from 'react'
 import { Search, Ban, Shield, UserCheck } from 'lucide-react'
 import adminService from '@/services/adminService'
@@ -17,6 +18,7 @@ export default function AdminUsers() {
   const [confirmModal, setConfirmModal] = useState(null) // { user }
   const [toggling, setToggling] = useState(null)
 
+  // Fetch one page of users and keep the total count for pagination.
   const load = (p = 1, q = search) => {
     setLoading(true)
     adminService.getUsers({ page: p, q })
@@ -30,8 +32,10 @@ export default function AdminUsers() {
 
   useEffect(() => { load() }, [])
 
+  // Search resets to page 1 so results always start from the first page.
   const handleSearch = () => { setPage(1); load(1, search) }
 
+  // Toggle ban/unban and update the row immediately for a responsive UI.
   const handleToggle = async (u) => {
     setToggling(u.id)
     try {
@@ -58,7 +62,7 @@ export default function AdminUsers() {
         </div>
       </div>
 
-      {/* Search */}
+      {/* Search bar */}
       <div className="flex gap-2 mb-5">
         <input
           value={search}
@@ -72,7 +76,7 @@ export default function AdminUsers() {
         </button>
       </div>
 
-      {/* Table */}
+      {/* User table */}
       <div className="card overflow-hidden">
         {loading ? <div className="p-8"><Spinner /></div> : users.length === 0 ? (
           <Empty icon="👥" title="Không có người dùng" />
@@ -145,7 +149,7 @@ export default function AdminUsers() {
         </div>
       </div>
 
-      {/* Confirm modal */}
+      {/* Confirmation dialog */}
       <Modal
         open={!!confirmModal}
         onClose={() => setConfirmModal(null)}

@@ -1,3 +1,4 @@
+// React entry point: sets up router, global toast, and theme bootstrap.
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
