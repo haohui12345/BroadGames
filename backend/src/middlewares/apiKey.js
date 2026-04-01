@@ -4,7 +4,7 @@
  */
 const requireApiKey = (req, res, next) => {
   const expectedKey = process.env.DOCS_API_KEY || 'student-docs-key'
-  const providedKey = req.headers['x-api-key']
+  const providedKey = req.headers['x-api-key'] || req.query?.apiKey
 
   if (!providedKey) {
     return res.status(401).json({ message: 'Thieu x-api-key' })
