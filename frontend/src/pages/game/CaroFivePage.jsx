@@ -10,6 +10,7 @@ import { useGameStore } from '@/store/gameStore'
 import { useAuthStore } from '@/store/authStore'
 import { checkWin, aiMove } from '@/utils/caroLogic'
 import { ensureSoloSession, loadGameSnapshot, recordSoloGameResult, saveGameSnapshot } from '@/utils/gamePersistence'
+import { getSocketUrl } from '@/utils/network'
 import toast from 'react-hot-toast'
 
 const ROWS = 15, COLS = 15, WIN = 5
@@ -78,9 +79,8 @@ export default function CaroFivePage() {
   useEffect(() => {
     if (mode !== 'vs_player' || !session) return
 
-    const socket = io(import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3000', {
-      auth: { token },
-    })
+    const socketUrl = getSocketUrl()
+    const socket = socketUrl ? io(socketUrl, { auth: { token } }) : io({ auth: { token } })
     socketRef.current = socket
 
     socket.emit('join_session', { sessionId: session.id })
@@ -353,7 +353,9 @@ export default function CaroFivePage() {
       <GameToolbar
         gameSlug={GAME_SLUG} gameName="Caro 5 trong 1 hàng"
         score={score} onReset={mode === 'vs_player' ? handleAbandon : reset}
-        timerKey={timerKey} paused={!!winner || (mode === 'vs_player' && (waitingOpponent || !isMyTurn))}
+        timerKey={timerKey}
+        paused={!!winner || (mode === 'vs_player' && waitingOpponent)}
+        timeoutEnabled={mode !== 'vs_player' || isMyTurn}
         onTimeout={handleTimeout}
         onSave={() => saveGameSnapshot({
           sessionId: soloSessionId,

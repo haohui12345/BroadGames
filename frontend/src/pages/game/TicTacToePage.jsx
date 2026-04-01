@@ -9,6 +9,7 @@ import { useGameStore } from '@/store/gameStore'
 import { useAuthStore } from '@/store/authStore'
 import { getGameHelp } from '@/data/gameHelp'
 import { ensureSoloSession, loadGameSnapshot, recordSoloGameResult, saveGameSnapshot } from '@/utils/gamePersistence'
+import { getSocketUrl } from '@/utils/network'
 import toast from 'react-hot-toast'
 
 const GAME_SLUG = 'tictactoe'
@@ -98,7 +99,8 @@ export default function TicTacToePage() {
   // Multiplayer socket listeners keep both players in sync.
   useEffect(() => {
     if (mode !== 'vs_player' || !session) return
-    const socket = io(import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3000', { auth: { token } })
+    const socketUrl = getSocketUrl()
+    const socket = socketUrl ? io(socketUrl, { auth: { token } }) : io({ auth: { token } })
     socketRef.current = socket
     socket.emit('join_session', { sessionId: session.id })
     socket.on('opponent_moved', ({ board_state }) => {
@@ -287,7 +289,9 @@ export default function TicTacToePage() {
     <div className="flex flex-col h-full">
       <GameToolbar gameSlug={GAME_SLUG} gameName="Tic-tac-toe" score={score}
         onReset={mode === 'vs_player' ? handleAbandon : reset}
-        timerKey={timerKey} paused={!!result || (mode === 'vs_player' && (waitingOpponent || !isMyTurn))}
+        timerKey={timerKey}
+        paused={!!result || (mode === 'vs_player' && waitingOpponent)}
+        timeoutEnabled={mode !== 'vs_player' || isMyTurn}
         onTimeout={handleTimeout} help={help}
         onSave={() => saveGameSnapshot({
           sessionId: soloSessionId,

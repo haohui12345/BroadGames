@@ -15,6 +15,7 @@ export default function GameToolbar({
   timerKey,
   paused,
   onTimeout,
+  timeoutEnabled = true,
   showTimer = true,
   help,
 }) {
@@ -67,10 +68,10 @@ export default function GameToolbar({
   }, [paused, showTimer, timerKey, normalizedTimerDuration])
 
   useEffect(() => {
-    if (!showTimer || timeLeft > 0 || timeoutFiredRef.current) return
+    if (!showTimer || !timeoutEnabled || timeLeft > 0 || timeoutFiredRef.current) return
     timeoutFiredRef.current = true
     onTimeout?.()
-  }, [showTimer, timeLeft, onTimeout])
+  }, [showTimer, timeoutEnabled, timeLeft, onTimeout])
 
   const handleSave = async () => {
     try {

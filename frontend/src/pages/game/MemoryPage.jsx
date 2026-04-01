@@ -10,6 +10,7 @@ import { ChevronLeft, ChevronRight, CornerDownLeft, Delete, Lightbulb } from 'lu
 import clsx from 'clsx'
 import { getGameHelp } from '@/data/gameHelp'
 import { ensureSoloSession, loadGameSnapshot, recordSoloGameResult, saveGameSnapshot } from '@/utils/gamePersistence'
+import { getSocketUrl } from '@/utils/network'
 import toast from 'react-hot-toast'
 
 const GAME_SLUG = 'memory'
@@ -79,7 +80,8 @@ export default function MemoryPage() {
   // Multiplayer sockets keep both boards in sync and swap turns after each move.
   useEffect(() => {
     if (mode !== 'vs_player' || !session) return
-    const socket = io(import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3000', { auth: { token } })
+    const socketUrl = getSocketUrl()
+    const socket = socketUrl ? io(socketUrl, { auth: { token } }) : io({ auth: { token } })
     socketRef.current = socket
     socket.emit('join_session', { sessionId: session.id })
 
@@ -265,7 +267,9 @@ export default function MemoryPage() {
     <div className="flex flex-col h-full">
       <GameHeader gameSlug={GAME_SLUG} gameName="Cờ trí nhớ" score={mode === 'vs_player' ? myScore : score}
         onReset={mode === 'vs_player' ? handleAbandon : reset}
-        timerKey={timerKey} paused={done || !!gameResult || (mode === 'vs_player' && (waitingOpponent || !myTurn))}
+        timerKey={timerKey}
+        paused={done || !!gameResult || (mode === 'vs_player' && waitingOpponent)}
+        timeoutEnabled={mode !== 'vs_player' || myTurn}
         onTimeout={handleTimeout} help={help}
         onSave={()=>saveGameSnapshot({
           sessionId: soloSessionId,
