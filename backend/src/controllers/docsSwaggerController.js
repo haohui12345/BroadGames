@@ -1,6 +1,6 @@
 const API_TITLE = 'BoardGames API Docs'
 
-const SERVER_URL = process.env.PUBLIC_API_URL || 'http://localhost:3000'
+const SERVER_URL = process.env.PUBLIC_API_URL || 'https://localhost:3000'
 
 const pathConfig = {
   '/api/auth/register': { post: { tags: ['Auth'], summary: 'Dang ky tai khoan moi' } },
